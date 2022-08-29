@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <meta charset="UTF-8">
+        <title>Study: Sort it Out</title>
+        <script src="jspsych-6.1.0/jspsych.js"></script>
+        <script src="jspsych-psychophysics-1.3/jspsych-psychophysics.js">
+        //I got this from http://jspsychophysics.hes.kyushu-u.ac.jp/
+        //should be cited: de Leeuw, J.R. jsPsych: A JavaScript library for creating behavioral experiments in a Web browser. Behav Res 47, 1–12 (2015). https://doi.org/10.3758/s13428-014-0458-y
+        // and the kuroki paper (its findable at the link and also in my zotero)          
+        </script>
+        <script src="jspsych-6.1.0/plugins/jspsych-html-keyboard-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-html-button-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-image-button-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-image-keyboard-response.js"></script>
+        <link href="jspsych-6.1.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>  
+        
+    </head>
+    <style>
+        body {
+                background-color: white;
+                color: black;
+        }
+        
+    </style>
+    <body> </body>
+    
+
+    <script>
+        document.addEventListener("DOMContentLoaded", theDomHasLoaded, false);
+        function theDomHasLoaded(e) {
+
+            var date = new Date()
+            var startTime = date.getTime()
+            var dateString = date.getDate().toString()+"_"+date.getMonth().toString()+"_"+date.getFullYear().toString()+"_"+date.getHours().toString()+"_"+date.getMinutes().toString()+"_"+date.getSeconds().toString()
+
+
+
+            // extract URL parameters (FROM: https://s3.amazonaws.com/mturk-public/externalHIT_v1.js)
+            function turkGetParam(name) {
+                var regexS = "[\?&]" + name + "=([^&#]*)";
+                var regex = new RegExp(regexS);
+                var tmpURL = document.location.href;
+                var results = regex.exec(tmpURL);
+                if (results == null) {
+                    return "";
+                } else {
+                    return results[1];
+                }
+            }
+            assignmentID = turkGetParam('assignmentId');
+            workerID = turkGetParam('workerId');
+            subject_id = turkGetParam('subject_id');
+            //construct next page link with worker id and assignment id in the URI
+            nextPage = "end_instructions.html?" + "workerId=" + workerID + "&assignmentId=" + assignmentID + "&subject_id=" + subject_id; 
+
+
+            
+
+            // -------      all my lovely VARIABLES for the sequence      -------\\
+
+            
+        
+            var x = window.innerWidth / 2;  // x center of the screen
+            var x_scale = (window.innerWidth-100)/9   // variable to adjust the positioning
+            var y = window.innerHeight / 2;  // y center of the screen
+
+            var pics = [
+                // 'Stimuli/Colorblindness/2.png',
+                // 'Stimuli/Colorblindness/2_2.png',
+                'Stimuli/Colorblindness/2_3.png',//
+                'Stimuli/Colorblindness/3.jpg',//
+                'Stimuli/Colorblindness/5.jpg',//
+                // 'Stimuli/Colorblindness/5.png',
+                // 'Stimuli/Colorblindness/5_2.png',
+                'Stimuli/Colorblindness/5_3.png',//
+                // 'Stimuli/Colorblindness/6.png',
+                // 'Stimuli/Colorblindness/6_2.png',
+                // 'Stimuli/Colorblindness/6_3.png',
+                // 'Stimuli/Colorblindness/7.png',
+                // 'Stimuli/Colorblindness/8.jpg',
+                'Stimuli/Colorblindness/9.jpg',//
+            ]
+
+            var test_number = 5
+            
+            var correct_response = [
+                // 50,
+                // 50,
+                50,//
+                51,//
+                53,//
+                // 53,
+                // 53,
+                53,//
+                // 54,
+                // 54,
+                // 54,
+                // 55,
+                // 56,
+                57//
+            ]
+            var timeline =[]
+
+            function getRandomInt(max) {
+                return Math.floor(Math.random() * Math.floor(max));
+            }
+
+            //this function generates a random list of integers between zero and max-1 without repetitions of length length
+            function getRandomIndexes(length, max=9) {
+                var indexes = []
+                if (length > max){
+                    return "the length is bigger than the max number, which makes this function quite impossible"
+                }
+                while (indexes.length < length){
+                    a = getRandomInt(max)
+                    if (indexes.includes(a)){}
+                    else{
+                        indexes.push(a)
+                    }
+
+                }
+                return indexes
+            }
+
+
+            function get2ShuffeledSublist(list,list2, length, max=list.length){
+
+                //create a shuffeled sublist
+                var shuffeledSublist = []
+                var shuffeledSublist2 = []
+                var indexes = getRandomIndexes(length, max)
+                for (i = 0; i < length; i++) {
+                    shuffeledSublist.push(list[indexes[i]]);
+                    shuffeledSublist2.push(list2[indexes[i]]);
+                }
+                return [shuffeledSublist, shuffeledSublist2]
+            }
+
+            var output = get2ShuffeledSublist(pics,correct_response, test_number)
+            var stimuli = output[0]
+            var responses = output[1]
+
+
+            var correct_counter = 0
+
+            var hello_trial={
+                type:'html-button-response',
+                stimulus: "<h3>4. Colorblindness test<br><br></h3>"+
+                "<h4>Congratulations on finishing the experiment! You are close to the end now.<br><br></h4>"+
+                "<p>Once you press start, you will be shown a short colorblindness test where you will have to identify the numbers hidden in a pattern.<br>"+
+                "Please do not be discouraged if you find the numbers hard to identify.</p>",
+                choices: ["Start"]
+                
+            }
+            timeline.push(hello_trial)
+
+            num = 0
+
+            for(let i in stimuli){
+                num += 1
+
+                var color_test = {
+                    type: 'image-keyboard-response',
+                    stimulus: stimuli[i],
+                    stimulus_height: 400,
+                    trial_duration: 60000,
+                    prompt: "<p><br>Please press the <b>number key</b> corresponding to the number hidden in the pattern</p>",
+                    choices: [48,49,50,51,52,53,54,55,56,57], //numberkeys from 0 to 9
+                    data:{
+                        trial_type: "color_blindness_test",
+                        hidden_number: responses[i]-48,
+                        save:true,
+                        Trial_index: num,
+                        assignmentID: assignmentID,
+                        MTurkID: workerID,
+                        subject_id: subject_id,
+                        date: dateString
+                    },
+                    on_finish: function(data) {
+                        data.response = data.key_press-48
+                        if(data.key_press == responses[i]){
+                            data.correct = "true";
+                            correct_counter = correct_counter +1
+                        } else {
+                            data.correct = "false";
+                        }
+                    }
+                }
+                var feedback = {
+                        type: 'image-keyboard-response',
+                        choices: jsPsych.NO_KEYS,
+                        stimulus_height: 400,
+                        maintain_aspect_ration: true,
+                        trial_duration: 1000,
+                        stimulus: function(){
+                            var last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+                            if(last_trial_correct == "true"){
+                                return 'Stimuli/right.png';
+                            } else {
+                                return "Stimuli/wrong.png";
+                            }
+                
+                        }    
+                };
+                timeline.push(color_test, feedback)
+            }
+
+            
+
+
+            //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+                            
+
+            
+
+            jsPsych.init({
+                timeline: timeline,
+                on_finish: function() {
+
+                    console.log("end")
+
+                    window.location.href = nextPage;
+
+                    
+                }
+            })
+
+            
+            
+        }
+
+    
+    </script>
+
+
+</html>

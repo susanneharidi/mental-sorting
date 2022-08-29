@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<!-- MTurk survey link template that extracts WorkerID and AssignmentId; contains code modified from https://github.com/cloudyr/MTurkR/blob/gh-pages/javascript/mturk-urlpipe.html-->
+<link href="https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css" rel="stylesheet" />
+<section class="container" id="SurveyLink" style="margin-bottom:15px; padding: 10px 10px; font-family: Verdana, Geneva, sans-serif; color:#333333; font-size:0.9em;">
+<div class="row col-xs-12 col-md-12"><!-- Instructions -->
+<div class="panel panel-primary">
+<div class="panel-heading"><strong>Sort it Out! Study instructions</strong></div><div class="panel-body">
+    <div id="page1" style="display:block">
+        <h3>Sort it out!</h3>
+        &nbsp;
+        
+        <p>This is a psychology experiment conducted by Eric Schulz, group leader of the Computational Principles of Intelligence Lab at the Max Planck Institute for Biological Cybernetics, and the members of his lab. In order to participate, you MUST meet the following criteria:</p>
+        <b>you must be 18 years of age or older. </b><br />
+        <b>you must be fluent in English. </b><br />
+        <b>you must not have already participated in this study. </b>
+        
+        <p><br />
+        Furthermore the study requires you to be able to distinguish between the colors below. Please only take part, if you perceive all of these colors as clearly distinct.</p>
+        <img src="https://kyblab.tuebingen.mpg.de/sort/Stimuli/farben_klein.png">
+        <p> For your reference, the task will include a colorblindness test.  </p>><br />
+        <p>If you meet these criteria we would be happy if you take part in our study!</p>
+        
+        <p>The study will take about 30-40 minutes and will pay <b>$3.00</b> plus a performance-dependent bonus of up to a maximum of <b>$8.00</b>.</p>
+        
+        <p>If you have any questions about the study, feel free to contact Dr. Schulz and his labmembers at <font color="blue">cpilab@tuebingen.mpg.de</font> or via MTurk.</p>
+        <br />
+</div>
+</div>
+</div>
+<!-- End Instruction --><table>
+	<tbody>
+		<tr>
+			<td id="linkDescription">URL not shown because there is an error with Javascript on your computer. To perform this HIT, you must have Javascript and cookies enabled on your browser.</td>
+			<td id="link">&nbsp;</td>
+		</tr>
+		<tr>
+			<td><strong>Provide the completion code here:</strong></td>
+			<td style="vertical-align: middle;"><input class="form-control" id="surveycode" name="surveycode" placeholder="e.g. 123456" type="text" /></td>
+		</tr>
+	</tbody>
+</table>
+</div>
+<script type="text/javascript" language="JavaScript">
+// RETRIEVE URL
+var fullurl=new String();
+// THIS IS THE LINE TO CAPTURE THE ACTUAL URL:
+var fullurl=document.location.href;
+// FUNCTION TO EXTRACT A URL PARAMETER (FROM: https://s3.amazonaws.com/mturk-public/externalHIT_v1.js)
+function turkGetParam( name ) { 
+    var regexS = "[\?&]"+name+"=([^&#]*)"; 
+    var regex = new RegExp( regexS ); 
+    var tmpURL = fullurl; 
+    var results = regex.exec( tmpURL ); 
+    if( results == null ) { 
+      return ""; 
+    } else { 
+      return results[1];    
+    } 
+}
+// ASSIGNS THE URL PARAMETERS TO JAVASCRIPT VARIABLES
+var assignmentID = turkGetParam('assignmentId');
+var workerID = turkGetParam('workerId');// THIS PART BUILDS THE LINK FOR AN ACCEPTED ASSIGNMENT
+if(assignmentID=="ASSIGNMENT_ID_NOT_AVAILABLE"|| assignmentID == "") {
+   document.getElementById('linkDescription').innerHTML = "<p style='font-weight:bold;text-align:center;'>Link will become available once you accept the HIT.</p>";
+} else {
+    // CONSTRUCT THE SURVEY LINK WITH THE EMBEDDED VALUES:
+    var surveylink = new String("https://kyblab.tuebingen.mpg.de/sort/index_1.html?" + "assignmentId=" + assignmentID + "&workerId=" + workerID);    // DISPLAY THE LINK
+    document.getElementById('link').innerHTML = '<a target="_blank" href=' + surveylink + '><h2><b>CLICK TO START HIT!</b></h2></a>';
+    document.getElementById('linkDescription').innerHTML = '<strong>Study link: </strong>(please do not reload the survey page or else your HIT may not be approved)'
+}</script></section>
+<!-- close container section -->
+<style type="text/css">td { font-size:1.0em; padding:5px 5px; }
+</style>
+
+</html>

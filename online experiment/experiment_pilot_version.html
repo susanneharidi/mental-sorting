@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <meta charset="UTF-8">
+        <title>Study: Sort it Out</title>
+        <script src="jspsych-6.1.0/jspsych.js"></script>
+        <script src="jspsych-psychophysics-1.3/jspsych-psychophysics.js">
+        //I got this from http://jspsychophysics.hes.kyushu-u.ac.jp/
+        //should be cited: de Leeuw, J.R. jsPsych: A JavaScript library for creating behavioral experiments in a Web browser. Behav Res 47, 1–12 (2015). https://doi.org/10.3758/s13428-014-0458-y
+        // and the kuroki paper (its findable at the link and also in my zotero)          
+        </script>
+        <script src="jspsych-6.1.0/plugins/jspsych-html-keyboard-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-image-button-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-image-keyboard-response.js"></script>
+        <link href="jspsych-6.1.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>  
+        
+    </head>
+    <style>
+        body {
+                background-color:grey ;
+                color: black;
+        }
+        
+    </style>
+    <body> 
+    </body>
+    
+
+    <script>
+
+        // ----------------------------------- get MTurk Id and such ---------------//
+        function turkGetParam(name) {
+            var regexS = "[\?&]" + name + "=([^&#]*)";
+            var regex = new RegExp(regexS);
+            var tmpURL = document.location.href;
+            var results = regex.exec(tmpURL);
+            if (results == null) {
+                return "";
+            } else {
+                return results[1];
+            }
+        }
+
+        assignmentID = turkGetParam('assignmentId');
+        workerID = turkGetParam('workerId');
+        subject_id = turkGetParam('subject_id');
+        nextPage = "color_blindness_test.html?" + "workerId=" + workerID + "&assignmentId=" + assignmentID + "&subject_id=" + subject_id; 
+
+
+        // --------------------------- just some general setup ----------------------//
+
+        // measure the time at the start of the experiment 
+        // The getTime() method returns the number of milliseconds between midnight of January 1, 1970 and the specified date.
+        var date = new Date()
+        var startTime = date.getTime()
+        var dateString = date.getDate().toString()+"_"+date.getMonth().toString()+"_"+date.getFullYear().toString()+"_"+date.getHours().toString()+"_"+date.getMinutes().toString()+"_"+date.getSeconds().toString()
+
+
+        
+
+        // -----------                                    instructions                                                  -----\\
+
+        var betweenBlocks = "<p>Score for the last block: </p>"
+
+        var betweenBlocks2 = "<p> <br> Press spacebar to continue to the next block. <br> Please remember to respond as <b>fast</b> as you can! </p>"
+
+        var last_block = "<p> <br> Congratulations! This was the last block. <br><br> <h2>Once you press spacebar the data will save. <br>This will take ~ 10 seconds, for which the screen will turn grey.</h2> <br> Then the colorblindness test will start. <br> Afterwards you will just have to answer some final questions to receive the code you need for completing your hit and receiving your bonus. <br>Which by the way is:</p>"
+       
+
+        var initialInstructions = "<h3>3. The Experiment</h3><br>"+
+            "The main experiment is about to start. Please be ready!<br>Press spacebar to continue"
+
+        // -------      all the FUNCTIONS that javascript doesnt have so I have to write them myself #Imisspython      -------\\
+ 
+        // function to generate random number from 0 to max-1
+        function getRandomInt(max) {
+            return Math.floor(Math.random() * Math.floor(max));
+        }
+
+        //this function generates a random list of integers between zero and max-1 without repetitions of length length
+        function getRandomIndexes(length, max=9) {
+            var indexes = []
+            if (length > max){
+                return "the length is bigger than the max number, which makes this function quite impossible"
+            }
+            while (indexes.length < length){
+                a = getRandomInt(max)
+                if (indexes.includes(a)){}
+                else{
+                    indexes.push(a)
+                }
+
+            }
+            return indexes
+        }
+
+
+        // this function takes a list as input and returns a list of length length which is a shuffeled sublist of the original list (there is also the option of specifying a max index)
+        function getShuffeledSublist(list, length, max=list.length){
+
+            //check if the input is ok and if not return feedback
+            if (length > list.length){
+                return "the length is bigger than the list, which makes this function quite impossible"
+            }else if (max > list.length){
+                return "the max is bigger than the list, which makes this function quite impossible"
+            }else if (length > max){
+                return "the length is bigger than the max number, which makes this function quite impossible"
+            }  
+
+            //create a shuffeled sublist
+            var shuffeledSublist = []
+            var indexes = getRandomIndexes(length, max)
+            for (i = 0; i < length; i++) {
+                shuffeledSublist.push(list[indexes[i]]);
+            }
+            return shuffeledSublist
+        }
+
+        // this function allows me to create copies of lists and objects, so that modefying the copy does not change the original (copied thi of the internet: https://stackoverflow.com/questions/728360/how-do-i-correctly-clone-a-javascript-object)
+        function clone(obj) {
+            var copy;
+
+            // Handle the 3 simple types, and null or undefined
+            if (null == obj || "object" != typeof obj) return obj;
+
+            // Handle Date
+            if (obj instanceof Date) {
+                copy = new Date();
+                copy.setTime(obj.getTime());
+                return copy;
+            }
+
+            // Handle Array
+            if (obj instanceof Array) {
+                copy = [];
+                for (var i = 0, len = obj.length; i < len; i++) {
+                    copy[i] = clone(obj[i]);
+                }
+                return copy;
+            }
+
+            // Handle Object
+            if (obj instanceof Object) {
+                copy = {};
+                for (var attr in obj) {
+                    if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+                }
+                return copy;
+            }
+
+            throw new Error("Unable to copy obj! Its type isn't supported.");
+        }
+
+
+        // function to shuffel arrays
+        function shuffel(a) {
+            var j, x, i;
+            for (i = a.length - 1; i > 0; i--) {
+                j = Math.floor(Math.random() * (i + 1));
+                x = a[i];
+                a[i] = a[j];
+                a[j] = x;
+            }
+            return a;
+        }
+
+        // this function gets an arrac of length len which contains len consecutive heights
+        function getConsecutiveHeights(max = max_bars,len){
+            var list = [];
+            var start = getRandomInt(max-len+1)
+            var heights = []
+            for (var i = 0; i < max; i++) {
+                list.push(i);
+            }
+
+            for (var k = start; k< start+len;k++){
+                heights.push(rect_height[k])
+            }
+            return heights
+        }
+        
+
+        // -------      all my lovely VARIABLES for the sequence      -------\\
+
+        
+     
+        var x = window.innerWidth / 2;  // x center of the screen
+        var x_scale = 90   // variable to adjust the positioning
+        var y = window.innerHeight / 2;  // y center of the screen
+        var x_width = 50 // width of the bars
+
+        // height setting for the bars
+        var base_height = 150
+        var scale_height = 30
+        var query_size = 100 // radius of the query
+
+        // variables for reward
+        var earned = 8
+        var base_reward = 3
+
+
+        //max number of bars 
+        var max_bars = 7 
+
+        var repetitions = 5
+
+        // settings for the canvas: 
+        var canvas_h = base_height+scale_height*max_bars+30//window.innerHeight-200
+        var canvas_w = x_scale*max_bars+3*x_width//window.innerWidth-200
+        var canvas_x_center = canvas_w/2
+
+
+        // maximum query position for the query structure position 
+        var queryStructureMax = 3
+
+        //anser keys for the bars
+        var allPos = [49,50,51,52,53,54,55,56,57] // this is the code for the keys from 1 to 9
+        var possiblePos = allPos.slice(0,max_bars)
+
+        // stimulus height for the feedback stimulus 
+        var fbHeight = 300
+
+        
+
+        // list with all posible postions for the bars
+        var rect_x_positions = [
+            canvas_x_center,
+            canvas_x_center-1*x_scale, 
+            canvas_x_center+1*x_scale,
+            canvas_x_center-2*x_scale, 
+            canvas_x_center+2*x_scale,
+            canvas_x_center-3*x_scale,
+            canvas_x_center+3*x_scale,
+            canvas_x_center-4*x_scale, 
+            canvas_x_center+4*x_scale]
+
+        // list with all posible 
+        var rect_height = [
+            base_height, 
+            base_height+scale_height,
+            base_height+2*scale_height,
+            base_height+3*scale_height, 
+            base_height+4*scale_height,
+            base_height+5*scale_height, 
+            base_height+6*scale_height,
+            base_height+7*scale_height,
+            base_height+8*scale_height
+        ]
+
+        var colors = [
+            "red",
+            "blue",
+            "green",
+            "black",
+            "white",
+            "purple",
+            "yellow",
+            "orange",
+            "saddlebrown",
+            "pink"
+        ]
+
+        // variable for the color sequence in the structure in the sort condition
+        var sortStructureColorsExp = getShuffeledSublist(colors, 3)
+        var sortStructureColorsCont = getShuffeledSublist(colors, 3)
+        
+
+        function getRestColors(colors, outs){
+            rest_colors = []
+            for (let i in colors){
+                if(colors[i]!=outs[0] && colors[i]!=outs[1] && colors[i]!=outs[2]){
+                    rest_colors.push(colors[i])
+                }
+            }
+            return rest_colors
+        }
+
+        // all the other colors
+        var sortStructureRestColorsExp =getRestColors(colors, sortStructureColorsExp)
+        var sortStructureRestColorsCont =getRestColors(colors, sortStructureColorsCont)
+            
+        //list containing all the length for all trials 
+
+        //function which makes me the list 
+        function makeSeqLens(max_bars,repetitions){
+            seqLens = []
+            for (i = 0; i < max_bars; i++){
+                for (k = 0; k < repetitions; k++){
+                    seqLens.push(i+1)
+                }
+            }
+            return seqLens
+        }
+        var sequenceLens = makeSeqLens(max_bars,repetitions)
+
+        var timeline =[]
+
+
+
+
+        // -------      some more, somewhat specific functions just for this little experiment      -------\\
+
+        // function that a random sequence of the inputted size. Also returns the color, height and position sequence (which in a way is contained in the generated rect sequence already though)    ------- for all conditions
+        // because for all conditions we are creating the same sequences (just with different colors)
+        function generateSequence(length = max_bars){
+            var rectSequenceNoStructureExp = [] //the list which contains a squence of all generated rectangeles
+            var rectSequenceQueryStructureExp = []
+            var rectSequenceSortStructureExp = []
+            var rectSequenceNoStructureCont = [] //the list which contains a squence of all generated rectangeles
+            var rectSequenceQueryStructureCont = []
+            var rectSequenceSortStructureCont = []
+            var colorSequenceNoStructureCont = getShuffeledSublist(colors,length)
+            var colorSequenceQueryStructureCont = getShuffeledSublist(colors,length)
+            var colorSequenceNoStructureExp = getShuffeledSublist(colors,length)
+            var colorSequenceQueryStructureExp = getShuffeledSublist(colors,length)
+            //now the color sequence for the structure in the sort condition is slightly more complex:
+            var generateColorSequenceSortStructure = function(length,sortStructureColors,sortStructureRestColors){
+                if (length == 1){
+                    return [sortStructureColors[0]]
+                }else if (length == 2){
+                    return [sortStructureColors[0],sortStructureColors[1],]
+                }else if (length == 3){
+                    return sortStructureColors
+                }else{
+                    tempcolors = getShuffeledSublist(sortStructureRestColors,length)
+                    rando = getRandomInt(length-2)
+                    tempcolors.splice(rando,3,sortStructureColors[0],sortStructureColors[1],sortStructureColors[2])
+                    return tempcolors
+                }
+            }
+            var colorSequenceSortStructureExp = generateColorSequenceSortStructure(length, sortStructureColorsExp, sortStructureRestColorsExp)
+            var colorSequenceSortStructureCont = generateColorSequenceSortStructure(length, sortStructureColorsCont, sortStructureRestColorsCont)
+
+            var heightSequence = getConsecutiveHeights(max = max_bars,len= length)  //these are consecutive positions, but they are not shuffeled
+            var positonSequence = getShuffeledSublist(rect_x_positions.slice(0,length),length)
+            for (i = 0; i < length; i++) {
+                // NO structure condition
+                var rect_object_NoStructureExp= {
+                    obj_type: 'rect', // means a rectangle
+                    startX: positonSequence[i], // location in the canvas
+                    startY: canvas_h/2+100-(heightSequence[i]/2-100),
+                    width: x_width, // of the rectangle
+                    height: heightSequence[i],
+                    line_color: colorSequenceNoStructureExp[i],
+                    fill_color: colorSequenceNoStructureExp[i],
+                    show_start_time: 0 // from the trial start (ms)#,
+                
+                }
+                // structure in the query condition (only the colors differ from the above)
+                var rect_object_QueryStructureExp= {
+                    obj_type: 'rect', // means a rectangle
+                    startX: positonSequence[i], // location in the canvas
+                    startY: canvas_h/2+100-(heightSequence[i]/2-100),
+                    width: x_width, // of the rectangle
+                    height: heightSequence[i],
+                    line_color: colorSequenceQueryStructureExp[i],
+                    fill_color: colorSequenceQueryStructureExp[i],
+                    show_start_time: 0 // from the trial start (ms)#,
+                
+                }
+                // structure in the sort condition (only the colors differ from the above)
+                var rect_object_SortStructureExp= {
+                    obj_type: 'rect', // means a rectangle
+                    startX: positonSequence[i], // location in the canvas
+                    startY: canvas_h/2+100-(heightSequence[i]/2-100),
+                    width: x_width, // of the rectangle
+                    height: heightSequence[i],
+                    line_color: colorSequenceSortStructureExp[i],
+                    fill_color: colorSequenceSortStructureExp[i],
+                    show_start_time: 0 // from the trial start (ms)#,
+                
+                }
+                // NO structure condition
+                var rect_object_NoStructureCont= {
+                    obj_type: 'rect', // means a rectangle
+                    startX: positonSequence[i], // location in the canvas
+                    startY: canvas_h/2+100-(heightSequence[i]/2-100),
+                    width: x_width, // of the rectangle
+                    height: heightSequence[i],
+                    line_color: colorSequenceNoStructureCont[i],
+                    fill_color: colorSequenceNoStructureCont[i],
+                    show_start_time: 0 // from the trial start (ms)#,
+                
+                }
+                // structure in the query condition (only the colors differ from the above)
+                var rect_object_QueryStructureCont= {
+                    obj_type: 'rect', // means a rectangle
+                    startX: positonSequence[i], // location in the canvas
+                    startY: canvas_h/2+100-(heightSequence[i]/2-100),
+                    width: x_width, // of the rectangle
+                    height: heightSequence[i],
+                    line_color: colorSequenceQueryStructureCont[i],
+                    fill_color: colorSequenceQueryStructureCont[i],
+                    show_start_time: 0 // from the trial start (ms)#,
+                
+                }
+                // structure in the sort condition (only the colors differ from the above)
+                var rect_object_SortStructureCont= {
+                    obj_type: 'rect', // means a rectangle
+                    startX: positonSequence[i], // location in the canvas
+                    startY: canvas_h/2+100-(heightSequence[i]/2-100),
+                    width: x_width, // of the rectangle
+                    height: heightSequence[i],
+                    line_color: colorSequenceSortStructureCont[i],
+                    fill_color: colorSequenceSortStructureCont[i],
+                    show_start_time: 0 // from the trial start (ms)#,
+                
+                }
+                rectSequenceNoStructureExp.push(rect_object_NoStructureExp)
+                rectSequenceQueryStructureExp.push(rect_object_QueryStructureExp)
+                rectSequenceSortStructureExp.push(rect_object_SortStructureExp)
+                rectSequenceNoStructureCont.push(rect_object_NoStructureCont)
+                rectSequenceQueryStructureCont.push(rect_object_QueryStructureCont)
+                rectSequenceSortStructureCont.push(rect_object_SortStructureCont)
+            }
+            return [rectSequenceNoStructureExp,rectSequenceNoStructureCont, colorSequenceNoStructureExp, colorSequenceNoStructureCont, heightSequence, positonSequence, rectSequenceQueryStructureExp, rectSequenceQueryStructureCont, 
+            colorSequenceQueryStructureExp, colorSequenceQueryStructureCont, rectSequenceSortStructureExp, rectSequenceSortStructureCont, colorSequenceSortStructureExp, colorSequenceSortStructureCont]
+
+        }
+
+        function queryStructRandomInt(seuqencelength, queryStructureMax){
+            if(seuqencelength<queryStructureMax){
+                return getRandomInt(seuqencelength)
+            }else{
+                return getRandomInt(queryStructureMax)
+            }
+        }
+
+
+        // returns two sequences, 1. the randomised rect sequence plus 2. a matched control sequence ------- no structure condition
+        function generatePairSequence(length){
+            allSequences = generateSequence(length)
+            rectSequenceSortNoStructureExp = allSequences[0]
+            rectSequenceSortQueryStructureExp = allSequences[6]
+            rectSequenceSortSortStructureExp = allSequences[10]
+            rectSequenceSortNoStructureCont = allSequences[1]
+            rectSequenceSortQueryStructureCont = allSequences[7]
+            rectSequenceSortSortStructureCont = allSequences[11]
+            sortedHeights = allSequences[4]
+
+
+            // this differentiates between the no strcuture and the structure in the query condition
+            randomIntNo = getRandomInt(allSequences[1].length)
+            randomIntQuery = queryStructRandomInt(allSequences[5].length, queryStructureMax)
+            randomIntSort = getRandomInt(allSequences[1].length)
+
+            queryColorNoStructureExp = allSequences[2][randomIntNo]
+            queryColorQueryStructureExp = allSequences[8][randomIntQuery]
+            queryColorSortStructureExp = allSequences[12][randomIntSort]
+
+            queryColorNoStructureCont = allSequences[3][randomIntNo]
+            queryColorQueryStructureCont = allSequences[9][randomIntQuery]
+            queryColorSortStructureCont = allSequences[13][randomIntSort]
+            
+
+
+            sortedPositions = allSequences[5].sort(function(a, b){return a-b}) // dont ask me why I need the thing in the () but it works...
+            
+            rectSeq = clone(rectSequenceSortNoStructureCont)
+            rectSeqQuery = clone(rectSequenceSortQueryStructureCont)
+            rectSeqSort = clone(rectSequenceSortSortStructureCont)
+            sortedNoStruct =[]
+            sortedQueryStruct = []
+            sortedSortStruct = []
+        
+            
+            for (i = 0; i < sortedHeights.length; i++) {
+                for (k = 0; k < rectSeq.length; k++) {
+                    if (rectSeq[k].height==sortedHeights[i]){
+                        var a = rectSeq[k]
+                        var b = rectSeqQuery[k]
+                        var c = rectSeqSort[k]
+                        a.startX = sortedPositions[i]
+                        b.startX = sortedPositions[i]
+                        c.startX = sortedPositions[i]
+                        sortedNoStruct.push(a)
+                        sortedQueryStruct.push(b)
+                        sortedSortStruct.push(c)
+                        
+                    }
+                }   
+            }
+            
+            return [rectSequenceSortNoStructureExp, sortedNoStruct, queryColorNoStructureExp, queryColorNoStructureCont, rectSequenceSortQueryStructureExp, 
+            sortedQueryStruct, queryColorQueryStructureExp, queryColorQueryStructureCont, rectSequenceSortSortStructureExp, sortedSortStruct, queryColorSortStructureExp, queryColorSortStructureCont]
+        }
+
+        // function that generates two lists. The first contains all the trials for the experimental condition and the second contains all the matched trials for the control condition      -------no structure condition
+        // The function takes a list of sequence length as input
+        function generateAllSequences(sequenceLens){
+            var expSeqNoStruct = []       // all experimental sequences  ---no Structure
+            var expSeqQueryStruct = []       // all experimental sequences   ---query structure
+            var expSeqSortStruct = []      // all experimental sequences   ---Sort structure
+
+            var contSeqNoStruct = []      // all control sequence
+            var querysNoStructExp = []       // all querys                  --- no structure
+            var querysNoStructCont = []       // all querys                  --- no structure
+
+            var contSeqQueryStruct = []
+            var querysQueryStructExp = []       // all querys               --- query structure
+            var querysQueryStructCont = []
+            
+            var contSeqSortStruct = []
+            var querysSortStructExp = []       // all querys               --- Sort structure
+            var querysSortStructCont = []
+            
+            
+            var oneSeq = []
+            for (let i in sequenceLens){                       // get one paired sewuence for each length determined in the sequenceLens array
+                oneSeq = generatePairSequence(sequenceLens[i])  // get a pair sequence
+                expSeqNoStruct.push(oneSeq[0])                        //add them to the right list
+                contSeqNoStruct.push(oneSeq[1])
+
+                expSeqQueryStruct.push(oneSeq[4])
+                contSeqQueryStruct.push(oneSeq[5])
+
+                expSeqSortStruct.push(oneSeq[8])
+                contSeqSortStruct.push(oneSeq[9])
+
+                // create stimuli for the querys
+                var query_objectNoStructExp = {
+                    obj_type: 'circle',
+                    startX: canvas_w/2, // location in the canvas
+                    startY: canvas_h/2+40,  // the 40 ensures that despite the prompt the circle appears in the middle
+                    radius: query_size,
+                    line_color: oneSeq[2], // You can use the HTML color name instead of the HEX color.
+                    fill_color: oneSeq[2],
+                    show_start_time: 0 // from the trial start (ms)
+                }
+                // create stimuli for the querys
+                var query_objectNoStructCont = {
+                    obj_type: 'circle',
+                    startX: canvas_w/2, // location in the canvas
+                    startY: canvas_h/2+40,  // the 40 ensures that despite the prompt the circle appears in the middle
+                    radius: query_size,
+                    line_color: oneSeq[3], // You can use the HTML color name instead of the HEX color.
+                    fill_color: oneSeq[3],
+                    show_start_time: 0 // from the trial start (ms)
+                }
+                
+                querysNoStructExp.push(query_objectNoStructExp) 
+                querysNoStructCont.push(query_objectNoStructCont) 
+
+                var query_objectQueryStructExp = {
+                    obj_type: 'circle',
+                    startX: canvas_w/2, // location in the canvas
+                    startY: canvas_h/2+40,
+                    radius: query_size,
+                    line_color: oneSeq[6], // You can use the HTML color name instead of the HEX color.
+                    fill_color: oneSeq[6],
+                    show_start_time: 0 // from the trial start (ms)
+                }  
+
+                var query_objectQueryStructCont = {
+                    obj_type: 'circle',
+                    startX: canvas_w/2, // location in the canvas
+                    startY: canvas_h/2+40,
+                    radius: query_size,
+                    line_color: oneSeq[7], // You can use the HTML color name instead of the HEX color.
+                    fill_color: oneSeq[7],
+                    show_start_time: 0 // from the trial start (ms)
+                } 
+                querysQueryStructExp.push(query_objectQueryStructExp) 
+                querysQueryStructCont.push(query_objectQueryStructCont) 
+
+                var query_objectSortStructExp = {
+                    obj_type: 'circle',
+                    startX: canvas_w/2, // location in the canvas
+                    startY: canvas_h/2+40,
+                    radius: query_size,
+                    line_color: oneSeq[10], // You can use the HTML color name instead of the HEX color.
+                    fill_color: oneSeq[10],
+                    show_start_time: 0 // from the trial start (ms)
+                } 
+                
+                var query_objectSortStructCont = {
+                    obj_type: 'circle',
+                    startX: canvas_w/2, // location in the canvas
+                    startY: canvas_h/2+40,
+                    radius: query_size,
+                    line_color: oneSeq[11], // You can use the HTML color name instead of the HEX color.
+                    fill_color: oneSeq[11],
+                    show_start_time: 0 // from the trial start (ms)
+                }  
+                querysSortStructExp.push(query_objectSortStructExp) 
+                querysSortStructCont.push(query_objectSortStructCont) 
+            }
+
+
+            return [expSeqNoStruct, contSeqNoStruct, querysNoStructExp, querysNoStructCont, expSeqQueryStruct, contSeqQueryStruct, 
+            querysQueryStructExp, querysQueryStructCont, expSeqSortStruct, contSeqSortStruct, querysSortStructExp, querysSortStructCont]
+        }
+
+        //this function shuffels the generated sequences according to the shuffel order arrays
+        function getShufffeledSequence(sequence, shuffelList){
+            shuffeledSequence =[]
+            for (let i in shuffelList){ 
+                shuffeledSequence.push(sequence[shuffelList[i]])
+            }
+            return shuffeledSequence
+        };
+
+
+        // function that gives feedback based on whether the answer is correct or not
+
+        // -------      create the order for the trials of the no structure blocks      -------\\
+
+        // -------      set up for the trials of the no structure blocks      -------\\
+
+        // no structure condition
+        var seqs = generateAllSequences(sequenceLens)
+        var experimentalSeq = seqs[0]
+        var controlSeq = seqs[1]
+        var allQuerysExp = seqs[2]
+        var allQuerysCont = seqs[3]
+
+        //Query Struct condition
+        var queryStructureExperimentalSeq = seqs[4]
+        var queryStructureControlSeq = seqs[5]
+        var queryStructureAllQuerysExp = seqs[6]
+        var queryStructureAllQuerysCont = seqs[7]
+
+        //SortStruct condition
+        var sortStructureExperimentalSeq = seqs[8]
+        var sortStructureControlSeq = seqs[9]
+        var sortStructureAllQuerysExp = seqs[10]
+        var sortStructureAllQuerysCont = seqs[11]
+
+        // ----------------------------------------------- get the correct positions for all thre conditions -----------------------------------------\\
+
+        // get the correct answers using the already sorted control sequences               ------------- no structure condition
+        var allCorrPos = []
+        
+        for (let i in controlSeq){
+            var a = []
+            for (let m in controlSeq[i]){
+                a.push(controlSeq[i][m].fill_color)
+            }
+            for (let k in a){
+                if (a[k]==allQuerysCont[i].fill_color){
+                    allCorrPos.push(possiblePos[k])
+                }
+            }
+        }
+
+
+        // get the correct answers using the already sorted control sequences               -------------structure in the query condition
+        var queryStructureAllCorrPos = []
+        var queryStructurePossiblePos = [49,50,51,52,53,54,55,56,57] // this is the code for the keys from 1 to 9
+        for (let i in queryStructureControlSeq){
+            var a = []
+            for (let m in queryStructureControlSeq[i]){
+                a.push(queryStructureControlSeq[i][m].fill_color)
+            }
+            for (let k in a){
+                if (a[k]==queryStructureAllQuerysCont[i].fill_color){
+                    queryStructureAllCorrPos.push(queryStructurePossiblePos[k]) 
+                }
+            }
+        }
+
+        // get the correct answers using the already sorted control sequences               -------------structure in the query condition
+        var sortStructureAllCorrPos = []
+        var sortStructurePossiblePos = [49,50,51,52,53,54,55,56,57] // this is the code for the keys from 1 to 9
+        for (let i in sortStructureControlSeq){
+            var a = []
+            for (let m in sortStructureControlSeq[i]){
+                a.push(sortStructureControlSeq[i][m].fill_color)
+            }
+            for (let k in a){
+                if (a[k]==sortStructureAllQuerysCont[i].fill_color){
+                    sortStructureAllCorrPos.push(sortStructurePossiblePos[k])
+                }
+            }
+        }
+        
+
+        // ------------------------- randomise the order and set up the final variables ----------------------------\\
+        
+        //these array contains a list of ints from 0 to the amount of trails per block in a shuffeled order, determining the order of the trials
+        var expOrder = shuffel(Array.from(Array(sequenceLens.length).keys()))
+        var contOrder = shuffel(Array.from(Array(sequenceLens.length).keys()))
+
+        // same for structure in the query
+        var queryStructureExpOrder = shuffel(Array.from(Array(sequenceLens.length).keys()))
+        var queryStructureContOrder = shuffel(Array.from(Array(sequenceLens.length).keys()))
+
+        // same for structure in the sort
+        var sortStructureExpOrder = shuffel(Array.from(Array(sequenceLens.length).keys()))
+        var sortStructureContOrder = shuffel(Array.from(Array(sequenceLens.length).keys()))
+
+
+        //shuffel the varibales for each block according to the generated random order
+        var shuffeledExpSeq = getShufffeledSequence(experimentalSeq, expOrder)
+        var shuffeledExpQuery = getShufffeledSequence(allQuerysExp, expOrder)
+        var shuffeledExpCorrPos = getShufffeledSequence(allCorrPos, expOrder)
+        var shuffeledContSeq = getShufffeledSequence(controlSeq, contOrder)
+        var shuffeledContQuery = getShufffeledSequence(allQuerysCont, contOrder)
+        var shuffeledContCorrPos = getShufffeledSequence(allCorrPos, contOrder)
+
+        // same for structure in the query
+        var queryStructureShuffeledExpSeq = getShufffeledSequence(queryStructureExperimentalSeq, queryStructureExpOrder)
+        var queryStructureShuffeledExpQuery = getShufffeledSequence(queryStructureAllQuerysExp, queryStructureExpOrder)
+        var queryStructureShuffeledExpCorrPos = getShufffeledSequence(queryStructureAllCorrPos, queryStructureExpOrder)
+        var queryStructureShuffeledContSeq = getShufffeledSequence(queryStructureControlSeq, queryStructureContOrder)
+        var queryStructureShuffeledContQuery = getShufffeledSequence(queryStructureAllQuerysCont, queryStructureContOrder)
+        var queryStructureShuffeledContCorrPos = getShufffeledSequence(queryStructureAllCorrPos, queryStructureContOrder)
+
+        // same for structure in the query
+        var sortStructureShuffeledExpSeq = getShufffeledSequence(sortStructureExperimentalSeq, sortStructureExpOrder)
+        var sortStructureShuffeledExpQuery = getShufffeledSequence(sortStructureAllQuerysExp, sortStructureExpOrder)
+        var sortStructureShuffeledExpCorrPos = getShufffeledSequence(sortStructureAllCorrPos, sortStructureExpOrder)
+        var sortStructureShuffeledContSeq = getShufffeledSequence(sortStructureControlSeq, sortStructureContOrder)
+        var sortStructureShuffeledContQuery = getShufffeledSequence(sortStructureAllQuerysCont, sortStructureContOrder)
+        var sortStructureShuffeledContCorrPos = getShufffeledSequence(sortStructureAllCorrPos, sortStructureContOrder)
+
+
+        //This puts all the varibales for each block in one array to make it easier to access them
+        var ExpNoStructure = [shuffeledExpSeq,shuffeledExpQuery,shuffeledExpCorrPos]
+        var ContNoStructure = [shuffeledContSeq,shuffeledContQuery,shuffeledContCorrPos]
+
+        // same for structure in the query
+        var queryStructureExp = [queryStructureShuffeledExpSeq,queryStructureShuffeledExpQuery,queryStructureShuffeledExpCorrPos]
+        var queryStructureCont = [queryStructureShuffeledContSeq,queryStructureShuffeledContQuery,queryStructureShuffeledContCorrPos]
+
+        // same for structure in the query
+        var sortStructureExp = [sortStructureShuffeledExpSeq,sortStructureShuffeledExpQuery,sortStructureShuffeledExpCorrPos]
+        var sortStructureCont = [sortStructureShuffeledContSeq,sortStructureShuffeledContQuery,sortStructureShuffeledContCorrPos]
+
+
+        // This randomizes the block order for each execution of the script
+        //var blockOrder = getShuffeledSublist([queryStructureCont, ExpNoStructure,  ContNoStructure, queryStructureExp, sortStructureExp, sortStructureCont],6)
+        var blocks = [ ExpNoStructure,  ContNoStructure,  queryStructureExp, queryStructureCont, sortStructureExp, sortStructureCont]
+        var blockNames = ["noStructureExp", "noStructureCont",  "queryStructureExp", "queryStructureCont", "sortStructureExp", "sortStructureCont"]
+       
+        var blockIndexOrder = shuffel(Array.from(Array(blocks.length).keys()))
+        var blockOrder = getShufffeledSequence(blocks, blockIndexOrder)
+        var blockNamesOrder = getShufffeledSequence(blockNames, blockIndexOrder)
+
+
+        
+
+        // this function retrieves the trial ID of the current trial
+        var TrialID = function (currentBlock, currentTrial){
+            if (currentBlock=="noStructureExp"){
+                return expOrder[currentTrial]
+            }else if (currentBlock=="noStructureCont"){
+                return contOrder[currentTrial]
+
+
+            }else if (currentBlock=="queryStructureExp"){
+                return queryStructureExpOrder[currentTrial]
+            }else if (currentBlock=="queryStructureCont"){
+                return queryStructureContOrder[currentTrial]
+
+
+            }else if (currentBlock=="sortStructureExp"){
+                return sortStructureExpOrder[currentTrial]
+            }else if (currentBlock=="sortStructureCont"){
+                return sortStructureContOrder[currentTrial]
+            }
+        }
+
+        //function for getting the color sequence
+        var getColorSequence = function(barSequence){
+            col = []
+            for (let k in barSequence){
+                col.push(barSequence[k].fill_color)
+            }
+            return col
+        }
+
+        //function for getting the position sequence
+        var getPosSequence = function(barSequence){
+            pos = []
+            for (let k in barSequence){
+                pos.push(barSequence[k].startX.toString())
+                //pos.push(" ")
+            }
+            return pos
+        }
+
+        //function for getting the height sequence
+        var getHeightSequence = function(barSequence){
+            height = []
+            for (let k in barSequence){
+                height.push(barSequence[k].height.toString())
+                //height.push(" ")
+            }
+            return height
+        }
+
+        ///-------------------------------------------- some basic trials -------------------------------------------------------------------------
+        //-------------------------------------------------------------------------------------------------------------------------------------------
+
+        // create a timeline variable which contains the randomized sequences which were generated by generateAllSequences also spit out a list with the changed order
+        var cross = {
+            obj_type: 'cross',
+            startX: canvas_w/2, // location in the canvas
+            startY: canvas_h/2,
+            line_length: 50,
+            line_width: 6,
+            line_color: 'black', // You can use the HTML color name instead of the HEX color.
+            fill_color: 'black',
+            show_start_time: 0 // from the trial start (ms)
+        }
+
+        // fication cross for fgurther usage
+        var fixationcross = {
+            type: 'psychophysics',
+            stimuli: [cross],
+            canvas_height:canvas_h,
+            canvas_width:canvas_w,
+            choices: jsPsych.NO_KEYS,
+            trial_duration: 1000,
+            data:{
+                Stimulus_type: "fixationcorss"
+            }
+                
+        };
+
+        // instruction for the very beginning
+        var hello_trial = {
+            type: 'html-keyboard-response',
+            stimulus: initialInstructions
+        }
+
+
+        // counter, for calculating the final reward
+        var total_percentage = 0
+        block = 0
+        num = 0
+
+        // announcement of a new block and time to wait
+        var new_block = {
+            type: 'html-keyboard-response',
+            stimulus: function(){
+                return betweenBlocks+ Math.round((percentage*100)).toString()+ "%" +betweenBlocks2 // this gives feedback about how many trials were correct in the last block
+            },
+            data:{
+                MTurkID: workerID,
+                Stimulus_type: "end_of_block",
+                TrialType: "experimental_data",
+                save: true,
+                Block: block,
+                assignmentID: assignmentID,
+                date: dateString,
+                subject_id: subject_id
+            },
+            on_finish: function(data){
+                var date2 = new Date()
+                var endTime = date2.getTime()
+                data.timeMs = date2-date // total time of the task in milliseconds
+                data.timeMin = (date2-date)/60000 // total time of the task in Minutes
+                data.score = percentage
+            }
+        };
+
+        // the end
+        var end = {
+            type: 'html-keyboard-response',
+            stimulus: function(){
+                return betweenBlocks+ "<b>" +Math.round((percentage*100)).toString()+ "%</b>" + last_block+  "<h1>$"+ (Math.round((total_percentage*earned)*100)/100).toString()+ "</h1>"+
+                "Because you earned "+(Math.round((total_percentage)*100)).toString()+"% of the total bonus."// this gives feedback about how many trials were correct in the last block
+            },
+            data:{
+                MTurkID: workerID,
+                Stimulus_type: "end_of_experiment",
+                TrialType: "experimental_data",
+                save: true,
+                assignmentID: assignmentID,
+                date: dateString,
+                subject_id: subject_id
+            },
+            on_finish: function(data){
+                var date2 = new Date()
+                var endTime = date2.getTime()
+                data.timeMs = date2-date // total time of the task in milliseconds
+                data.timeMin = (date2-date)/60000 // total time of the task in Minutes
+                data.score = total_percentage
+                data.reward = Math.round((total_percentage*earned)*100)/100
+            }
+        };
+
+        
+
+        timeline.push(hello_trial)
+
+        // --------------------------------- start the EXPERIMENT ------------------------------------ //
+        // this creates the timline for all the blocks contained in the blockOrder variable 
+        for (let o in blockOrder){
+            block +=1 // this I could delete, but it feels like it might be useful at some point
+            percentage = 0 // pcounts the ratio of correct trials
+
+            for (let i in blockOrder[o][0]){
+                num += 1
+              
+                var expSequencePresentation = {
+                    type: 'psychophysics',
+                    canvas_height:canvas_h,
+                    canvas_width:canvas_w,
+                    stimuli: blockOrder[o][0][i],
+                    choices: ['space'],
+                    prompt: "<p><br>Please press <b>spacebar</b> to continue.</p>",
+                    data: {
+                        Conditions: blockNamesOrder[o],
+                        TrialID: TrialID(blockNamesOrder[o], i).TrialID,
+                        Stimulus_type: "bars",
+                        Trial_index: num,
+                        Number_of_Bars: blockOrder[o][0][i].length,
+                        color_sequence: getColorSequence(blockOrder[o][0][i]).join(),
+                        position_sequence:getPosSequence(blockOrder[o][0][i]).join(),
+                        heights: getHeightSequence(blockOrder[o][0][i]).join(),
+                        Query_color: blockOrder[o][1][i].fill_color,
+                        TrialID: TrialID(blockNamesOrder[o], i),
+                        Correct_Position: blockOrder[o][2][i]-48,
+                        correct: "false",
+                        Block: block,
+                        MTurkID: workerID,
+                        TrialType: "experimental_data",
+                        save: true,
+                        assignmentID: assignmentID,
+                        date: dateString,
+                        response_position: 000,
+                        subject_id: subject_id
+                    }
+                };
+
+                var expQueryPresentation = {
+                    type: 'psychophysics',
+                    canvas_height:canvas_h,
+                    canvas_width:canvas_w,
+                    stimuli: [blockOrder[o][1][i]],
+                    choices: jsPsych.ALL_KEYS,
+                    prompt: "<p><br>Please press the <b>number key</b> corresponding to the correct position of the bar with the above color.</p>",
+                    data:{
+                        Conditions: blockNamesOrder[o],
+                        TrialID: TrialID(blockNamesOrder[o], i),
+                        Stimulus_type: "query",
+                        Trial_index: num,
+                        Query_color: blockOrder[o][1][i].fill_color,
+                        Number_of_Bars: blockOrder[o][0][i].length,
+                        Correct_Position: blockOrder[o][2][i]-48,
+                        color_sequence: getColorSequence(blockOrder[o][0][i]).join(),
+                        position_sequence:getPosSequence(blockOrder[o][0][i]).join(),
+                        heights: getHeightSequence(blockOrder[o][0][i]).join(),
+                        Block: block,
+                        MTurkID: workerID,
+                        TrialType: "experimental_data",
+                        save: true,
+                        assignmentID: assignmentID,
+                        date: dateString,
+                        subject_id: subject_id
+                    },
+                    on_finish: function(data) {
+                        //check if response is valid and if it is if it is correct
+                        data.response_position = data.key_press-48
+                        jsPsych.data.get().last(3).filter({Stimulus_type: 'bars'}).values()[0].response_position = data.key_press-48
+                        if (i == 0){
+                            percentage = 0
+                        }
+                        if (possiblePos.indexOf(data.key_press)>=0){
+                            
+                            if(data.key_press == blockOrder[o][2][i]){
+                                data.correct = "true";
+
+                                // change the data of the bars
+                                jsPsych.data.get().last(3).filter({Stimulus_type: 'bars'}).values()[0].correct = "true"
+
+                                percentage += 1/blockOrder[o][0].length
+                                total_percentage += 1/(blockOrder[o][0].length*blockOrder.length)
+                            } else {
+                                data.correct = "false";
+                                expSequencePresentation.data.correct = "false";
+                            }
+                        }else{
+                            data.correct = "invalid response",
+
+                            // change the data of the bars
+                            jsPsych.data.get().last(3).filter({Stimulus_type: 'bars'}).values()[0].correct = "invalid response";
+                        }
+                    
+                  
+
+
+                    }  
+                };
+                fbHeight
+
+                var feedback = {
+                    type: 'image-keyboard-response',
+                    choices: jsPsych.NO_KEYS,
+                    stimulus_height: function(){
+                        var last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+                        if(last_trial_correct== "invalid response"){
+                            return 300
+                        } else {
+                            return fbHeight
+                        }
+                    },
+                    maintain_aspect_ration: true,
+                    trial_duration: function(){
+                        var last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+                        if(last_trial_correct== "invalid response"){
+                            return 5000
+                        } else {
+                            return 1000
+                        }
+                    },
+                    stimulus: function(){
+                        var last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+                        if(last_trial_correct== "invalid response"){
+                            return "Stimuli/invalidResponse.png"
+                        }else if(last_trial_correct == "true"){
+                            return 'Stimuli/right.png';
+                        } else {
+                            return "Stimuli/wrong.png";
+                        }
+            
+                    }
+                    };
+
+            timeline.push(fixationcross, expSequencePresentation,fixationcross, expQueryPresentation, feedback)
+            };
+            if (o == blockOrder.length-1){
+                timeline.push(end)
+            }else{
+                timeline.push(new_block)
+            }
+
+        }
+
+
+            
+
+        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+
+        function saveDataToDb() {
+                //jspsych-written
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', 'write_data.php'); // change 'write_data.php' to point to php script.
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.onload = function() {
+                    if(xhr.status == 200){
+                    //var response = JSON.parse(xhr.responseText);
+                    var response = xhr.responseText;
+                    //console.log(response.success)
+                    //console.log(response);
+                    //console.log('status 200');
+                    }
+                };
+                xhr.send(jsPsych.data.get().filter({save: true}).json()); //for jspsych's version
+                }
+        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+        function sayHi() {
+            window.location.href = nextPage;   
+        }
+
+        
+
+        data_sent = false
+        jsPsych.init({
+            timeline: timeline,
+            show_progress_bar: true,
+            on_finish: function() {
+                if (!data_sent) {
+                    data_sent = true;
+                    //var data = jsPsych.data.get().csv();
+
+                    saveDataToDb()
+                    console.log("end")
+
+                    setTimeout(sayHi, 10000); // 10 sekunden
+
+                    // local save
+                    //jsPsych.data.get().localSave('csv','sortingitOut_finish_'+workerID+'.csv');
+
+                    //window.location.href = nextPage; // send them to the last page
+                    // // server save
+                    // postData(data, data_url,function(){
+                    //   postData(ids_json, user_url,function(){
+                    //     location.replace("https://app.prolific.co/submissions/complete?cc="); // Add completion code
+                    //   });
+                    // });
+                };
+                // show data
+                //jsPsych.data.displayData();
+            },
+            // on_close: function(){ // closing browser window before end of experiment
+            //     if (!data_sent) {
+            //         data_sent = true;
+            //         // local save
+            //         jsPsych.data.get().localSave('csv','sortingitOut__close_'+subject+'.csv');
+            //         // // server save
+            //         // postData(data, data_url,function(){
+            //         //   postData(ids_json, user_url); // check that this is ok?
+            //         // });
+            //     };
+            // },
+            // on_interaction_data_update: function(data) { // end experiment if ppt exits fullscreen
+            //     if (fullscreen_check_on) {
+            //         if (JSON.stringify(data.event)==='"fullscreenexit"') {
+            //             if (!data_sent) {
+            //                 data_sent = true;
+            //                 // local save
+            //                 alert("Unfortunately you have left fullscreen mode and cannot continue with the experiment. \nClosing this alert will redirect you to Prolific. \n \nPlease contact us if you think there was a mistake.");
+            //                 jsPsych.data.get().localSave('csv','sortingitOUt__close_'+subject+'.csv');
+            //                 location.replace("https://app.prolific.co/submissions/complete?cc="+completion_code);
+            //                 // // server save
+            //                 // var data = jsPsych.data.get().json();
+            //                 // postData(data, data_url,function(){
+            //                 //   postData(ids_json, user_url,function(){
+            //                 //     alert("Unfortunately you have left fullscreen mode and cannot continue with the experiment. \nClosing this alert will redirect you to Prolific. \n \nPlease contact us if you think there was a mistake.");
+            //                 //     location.replace("https://app.prolific.co/submissions/complete?cc="+completion_code);
+            //                 //   });
+            //                 // });
+            //             };
+            //         }
+            //     }
+            // }
+        })
+
+        //var all_data = jsPsych.data.get("rt");
+    </script>
+
+
+</html>

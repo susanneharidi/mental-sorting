@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Charley Wu">
+    <title>Study: Sort it Out</title>
+
+    <script src="js/d3.v3.min.js" charset="utf-8"></script>
+
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="css/ui.css"> 
+
+</head>
+
+<body>
+    <div class='container'>
+        <!--Consent Form -->
+        <div id="page1" style="display:block">
+            <br><br>
+            <br><br>
+            <br><br>
+            <h3>2. Comprehension questions</h3>
+            <br><br>
+                <p><b>Congratulations on completing the practice trials! </b></p>
+                <p><b>We will now ask you three short questions to make sure you understood the task. </b></p>
+                <br>
+                <p>You will need to get all of the answers correct to proceed to the next experiment, so please read the questions carefully!</p><br>
+            
+            <br>
+            <button class='btn-primary text-xl' type="button" name="button" id="buttonBeginExperiment">Continue</button><br><br>
+        </div>
+
+        <!--Instructions -->
+        <div id="page2" style="width: 100%; overflow: scroll; display:none">
+            <br><br>
+            <h3>Here is a reminder about how the experiment works, just in case you need it:</h3>
+                <p><b>Feel free to skip this part if you think you got it by now. If you get the comprehension questions wrong, you will be returned to this section. </b></p>
+                <br>
+                <p>The experiment consists of 6 blocks. </p>
+                <p>In half of the blocks you will see a scrambled sequence of colored bars with different heights. Please sort the bars from the smallest to the tallest in your head and remember the position of each bar in the sorted order. Once you think you remembered the order, hit the spacebar to continue.</p>
+                <img border="0" src="images/bars.png" align="center" style="width:400px;height:300px;"><br><br><br>
+                <p>In the other half of the blocks, the sequence of colored bars will be pre-sorted by height (from smallest to tallest). So all you have to do is remember the order they are in. Once you think you have remembered the order, hit spacebar to continue.</p>
+                <img border="0" src="images/bars_sorted.png" align="center" style="width:400px;height:300px;"><br><br><br>
+                <p>Next you will always see a colored circle.</p>
+                <img border="0" src="images/cue.png" align="center" style="width:320px;height:300px;"><br><br><br>
+                <p>Please provide the position (in the sequence that you have <b>sorted</b> and remembered) of the bar with the same color using the number keys above the keyboard. 1 represents the position of the smallest bar.</p>
+                <img border="0" src="images/keyboard_solution.png" align="center" style="width:600px;height:450px;"><br><br><br>
+                <p>In the two examples above, the correct answer for the trial with the scrambled sequence would be <b>5</b>, while the correct answer for the trial with the pre-sorted sequence would be <b>4</b>.</p><br>
+                <p>The length of the sequence will vary between different trials.</p><br>
+                <p>Accuracy is very imprortant for this experiment, but please also try to be as <b>fast</b> as possible, both when sorting and remembering the sequence as well as when providing your answer!</p><br>
+                <p>Ok. Now let’s test your understanding of the task.</p><br>
+                <br><br>
+                     
+            <button class='btn-primary text-xl' type="button" id="buttonInstructions">Continue</button><br><br>
+        </div>
+
+        <!--Comprehension Questions -->
+        <div id="page3" style="display:none;">
+            <br>
+            <h1 class="text-xl">Please answer a few questions about this study before proceeding</h1>
+
+            <div class="radio">
+                <legend class="text-l">What is the main task in the scrambled blocks?</legend>
+                <label class="text-m">
+                <input type="radio" name="q1" id="q1a" value="option1" checked>
+                 &nbsp; &nbsp; Remembering the exact sequence you see on the screen.
+              </label>
+            </div>
+            <div class="radio">
+                <label class="text-m">
+                <input type="radio" name="q1" id="q1b" value="option2">
+                 &nbsp;  &nbsp; Sorting the sequence in your head and remembering the sorted sequence.
+              </label>
+            </div>
+            <div class="radio">
+                <label class="text-m">
+                <input type="radio" name="q1" id="q1c" value="option3" >
+                 &nbsp;  &nbsp; Just sorting the sequence. Memorizing is not necessary.
+              </label>
+            </div><br>
+
+            <div class="radio">
+                <legend class="text-l">What should you pay attention to in this experiment?</legend>
+            </div>
+
+            <div class="radio">
+                <label class="text-m">
+                        <input type="radio" name="q2" id="q2a" value="option1" checked>
+                        &nbsp; &nbsp; your speed
+                </label>
+            </div>
+
+            <div class="radio">
+                <label class="text-m">
+                        <input type="radio" name="q2" id="q2b" value="option2">
+                        &nbsp; &nbsp; your accuracy
+                </label>
+            </div>
+
+            <div class="radio">
+                <label class="text-m">
+                        <input type="radio" name="q2" id="q2c" value="option3">
+                        &nbsp; &nbsp; both your speed and accuracy
+                </label>
+            </div><br>
+
+
+            <div class="radio">
+                <legend class="text-l">How are the blocks different?</legend>
+                <label class="text-m">
+                <input type="radio" name="q3" id="q3a" value="option1" checked>
+                 &nbsp;  &nbsp; They are all the same.
+              </label>
+            </div>
+            <div class="radio">
+                <label class="text-m">
+                <input type="radio" name="q3" id="q3b" value="option2">
+                 &nbsp;  &nbsp; In some blocks the bars are already pre-sorted, whereas in other blocks they are scrambled. Your task is always to remember the bars in the order they are presented.
+              </label>
+            </div>
+            <div class="radio">
+                <label class="text-m">
+                <input type="radio" name="q3" id="q3c" value="option3" >
+                 &nbsp;  &nbsp; Each block has a different task, which will be described at the beginning of the block.
+              </label>
+            </div>
+            <div class="radio">
+                <label class="text-m">
+                <input type="radio" name="q3" id="q3d" value="option3" >
+                 &nbsp;  &nbsp; In some blocks the bars are already pre-sorted, whereas in other blocks they are scrambled. Your task is always to remember the order of the bars sorted from shortest to tallest.
+
+              </label>
+            </div><br>
+
+            <p class="text-m"> Only when you answered all the question correctly will you be able to start the study.</p>
+            <div>
+                <button class='btn-primary text-xl' type="button" name="button" id="buttonInstructionsCheck">Check Answers</button>
+            </div>
+        </div>
+
+        <!--Send the participant on to the colorblindness task -->
+
+        
+        
+
+        <div id="page4" style="display:none; text-align:center;">
+            <br><br><br><br><br><br><br><br><br><br><br><br>
+
+            <h1 class="text-xxl">Great job! You've answered all the questions correctly!</h1>
+            <br><br>
+            
+
+            <button class='btn-primary text-xl' type="button" name="button" id="buttonGoToPageFive">Let's get started!</button>
+            
+        </div>
+
+        <!--MAin Experiment -->
+        <div id="page5" style="display:none; text-align: center;">
+
+            <h1 class="text-xxl">If this page stays, something went wrong. Please refresh the page and answer the comprehension questions again. </h1>
+            <button class='btn-primary text-xl' type="button" id="nextRoundButton">ok</button>
+        </div>
+        <!--End of task -->
+        <div id="page6" style="display:none; text-align: center;">
+            <div id="thanksforcompleting">
+                <h1>
+                    <font size="4">It won't take long....</font>
+                </h1>
+            </div>
+            <br>
+            
+        </div>
+        <!--Demographic information -->
+        <div id="page7" style="display:none; text-align: left;">
+
+            <h2 class="text-xl">Thank you for completing our study.</h2>
+            <br>
+            <fieldset>
+              <div>
+                Please check that your <b>MTurk ID</b> is correct. If not entered correctly, you may not be able to receive your bonus.<br><br>
+                <form>
+                    MTurk ID:<br>
+                    <input type="text" id="MTurkID"><br>
+                </form>
+                </div> <br>
+              <div>
+                How old are you?<br>
+                <input id="age" type="number" name="quantity" min="18" max="99">
+              </div><br>
+              <div>
+                What's your gender?<br>
+                <input id="gender1" type="radio" name="gender" value="0" > Female<br>
+                <input id="gender2" type="radio" name="gender" value="1" > Male<br>
+              </div><br>
+              <div>
+              <form>Please let us know what strategies you used: <br>
+                <textarea cols="40" rows="5" id = "processDescription" name="Comments"> Describe your strategy </textarea><br><br>
+              </form>
+              </div>
+              </fieldset>                    
+                    <div style="width:50px;margin:0 auto; float:left">
+                        <button class='btn-primary text-xl' type="button" id="finishButton">Finish</button>
+                    </div>
+        </div>
+        <!--Completion code -->
+        <div id="page8" style="display:none; text-align: center;">
+          <h3>You have now completed the experiment.</h3>
+            <div id="rewardText" class="text-l" > Congratulations! You have earned a bonus of $0.00 </div><br>
+            <div class="text-l"> To earn your base fee of $X.XX, please copy and paste the following completion code into the Amazon MTurk window for this HIT: <b>COMPLETION CODE</b> </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="js/experiment.js"></script>
+</body>
+<script>
+
+    // this addEvent listener makes sure, that the script only starts after the right button was pressed :)
+    document.body.addEventListener("click", event => {
+        if (event.target.nodeName == "BUTTON") {
+        if (event.target.textContent== "Let's get started!"){
+            //Capture user id and assignment id
+            assignmentId = turkGetParam('assignmentId');
+            workerId = turkGetParam('workerId');
+            subject_id = turkGetParam('subject_id');
+
+            //construct next page link with worker id and assignment id in the URI
+            nextPage = "experiment.html?" + "workerId=" + workerID + "&assignmentId=" + assignmentID + "&subject_id=" + subject_id; 
+
+            window.location.href = nextPage; //send them
+        }
+        }
+    });
+    
+
+</script>
+
+</html>

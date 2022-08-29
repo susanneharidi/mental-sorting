@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <meta charset="UTF-8">
+        <title>Study: Sort it Out</title>
+        <script src="jspsych-6.1.0/jspsych.js"></script>
+        <script src="jspsych-psychophysics-1.3/jspsych-psychophysics.js">
+        //I got this from http://jspsychophysics.hes.kyushu-u.ac.jp/
+        //should be cited: de Leeuw, J.R. jsPsych: A JavaScript library for creating behavioral experiments in a Web browser. Behav Res 47, 1–12 (2015). https://doi.org/10.3758/s13428-014-0458-y
+        // and the kuroki paper (its findable at the link and also in my zotero)          
+        </script>
+        <script src="jspsych-6.1.0/plugins/jspsych-html-keyboard-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-html-button-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-image-keyboard-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-survey-text.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-instructions.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-survey-multi-choice.js"></script>
+        <link href="jspsych-6.1.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>  
+        
+    </head>
+    <style>
+        body {
+                background-color:white ;
+                color: black;
+        }
+        
+    </style>
+    <body> 
+    </body>
+    
+
+    <script>
+
+        // function to make inputs sql save
+        function mysql_real_escape_string (str) {
+            if (typeof str != 'string')
+                return str;
+
+            return str.replace(/[\0\x08\x09\x1a\n\r"'\\\%]/g, function (char) {
+                switch (char) {
+                    case "\0":
+                        return "\\0";
+                    case "\x08":
+                        return "\\b";
+                    case "\x09":
+                        return "\\t";
+                    case "\x1a":
+                        return "\\z";
+                    case "\n":
+                        return "\\n";
+                    case "\r":
+                        return "\\r";
+                    case "\"":
+                    case "'":
+                    case "\\":
+                    case "%":
+                        return "\\"+char; // prepends a backslash to backslash, percent,
+                                        // and double/single quotes
+                }
+            });
+        }
+
+        //function to grab stuff of the url
+        function turkGetParam(name) {
+            var regexS = "[\?&]" + name + "=([^&#]*)";
+            var regex = new RegExp(regexS);
+            var tmpURL = document.location.href;
+            var results = regex.exec(tmpURL);
+            if (results == null) {
+                return "";
+            } else {
+                return results[1];
+            }
+        }
+
+        // the ids hidden in the url
+        assignmentID = turkGetParam('assignmentId');
+        workerID = turkGetParam('workerId');
+        subject_id = turkGetParam('subject_id');
+
+        // the date and time this part of the experiment was done
+        var date = new Date()
+        var startTime = date.getTime()
+        var dateString = date.getDate().toString()+"_"+date.getMonth().toString()+"_"+date.getFullYear().toString()+"_"+date.getHours().toString()+"_"+date.getMinutes().toString()+"_"+date.getSeconds().toString()
+    
+
+
+        // instructions
+        var instructions1 = "<p><h1>Perfect!</h1><br><br>You are almost done now.<br></p>"
+        var instructions2 = "<p>We just want you to answer a few final questions. Please be as detailed as you can be.<br></p>"
+
+        // instruction on what follows
+        var instruction_trial_1 = {
+            type: 'instructions',
+            pages: [
+                instructions1,
+                instructions2
+            ],
+            show_clickable_nav: true
+        }
+
+       
+
+        // survey with final questions
+        var survey_trial1 = {
+            type: 'survey-multi-choice',
+            questions: [
+            {
+                prompt: "Gender", 
+                options: ["female", "male", "non-binary/other"], 
+                horizontal: true,
+                //required: true,
+                name: 'Gender'
+            }
+            ], 
+            data:{
+                MTurkID: workerID,
+                assignmentID: assignmentID,
+                subject_id: subject_id,
+                date: dateString,
+                type: "Gender",
+                save:true
+            },
+            on_finish: function(data){
+                data.response = data.responses
+            }
+           
+        };
+
+        // survey with final questions
+        var survey_trial2 = {
+            type: 'survey-text',
+            questions: [
+                {
+                prompt: "Age*", rows: 1, columns: 10, //required: true,
+                //options: ["under 18", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70","over 70"], 
+                name: 'Age'}, 
+            ],
+            data:{
+                MTurkID: workerID,
+                assignmentID: assignmentID,
+                subject_id: subject_id,
+                date: dateString,
+                type: "Age",
+                save:true,
+                
+            },
+            on_finish: function(data){
+                data.response = mysql_real_escape_string(data.responses)
+            }
+        };
+
+        // survey with final questions
+        var survey_trial3 = {
+            type: 'survey-text',
+            questions: [
+                {prompt: "Did you use any strategies when solving the task? Please describe them in as much detail as possible ;)", name: 'Stategies', rows: 8, columns: 80},
+                {prompt: "Did you notice any differences between the blocks, other than scrambled vs. pre-sorted? If so what did you notice?", name: 'Blogfeatures', rows: 8, columns: 80},
+                {prompt: "If you have any other comments for us, please let us know here.", name: 'Comments',rows: 8, columns: 80},
+            ],
+            data:{
+                MTurkID: workerID,
+                assignmentID: assignmentID,
+                subject_id: subject_id,
+                date: dateString,
+                type: "Comments",
+                save: true
+            },
+            on_finish: function(data){
+                data.response = mysql_real_escape_string(data.responses)
+            }
+        };
+
+        // instruction on what follows
+        var finished = {
+            type: 'html-button-response',
+            stimulus:
+                "<p><h1>Thank you very much for your participation!</h1><br>"+
+                "The password you need to claim your reward is:<br>"+
+                "<h1>satanarchäolügenialkohöllisch</h1>"+
+                "<br>Please click the <b>End</b> button! </p>",
+            choices:["End"]
+        }
+
+
+
+        timeline =[instruction_trial_1,survey_trial1, survey_trial2, survey_trial3]
+
+
+        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%/  Saving the data to a database /%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      
+
+        
+        data_sent = false
+        jsPsych.init({
+            timeline: timeline,
+            on_finish: function() {
+                if (!data_sent) {
+                    data_sent = true;
+
+                    console.log("end")
+
+                    window.location.href = "https://kyblab.tuebingen.mpg.de/sort/theveryveryend.html"
+
+                };
+
+            },
+    
+        })
+
+
+    </script>
+
+</html>

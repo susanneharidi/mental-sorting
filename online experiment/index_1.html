@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Charley Wu">
+    <title>Study: Sort it Out</title>
+
+    <script src="js/d3.v3.min.js" charset="utf-8"></script>
+
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="css/ui.css"> 
+
+</head>
+
+<body>
+    <div class='container'>
+        <!--Consent Form -->
+        <div id="page1" style="display:block">
+            <h3>Consent form for participation in this online experiment</h3>
+            <img border="0" src="images/MPIBK_Logo.png" align="center" style="width:1000px;height:200px;"><br>
+            <p> Computational Principles of Intelligence Lab</p>
+            <p> Designed by: Susanne Haridi<br>
+                  Email: <font color="blue">cpilab@tuebingen.mpg.de</font><br></p>
+            <h4> Informed Consent Form </h4>
+            <p> This is a psychology experiment conducted by Eric Schulz, group leader of the Computational Principles of Intelligence Lab at the Max Planck Institute for Biological Cybernetics and the members of his lab. As mentioned on the MTurk page before you accepted the HIT, you MUST meet the following criteria to participate in the experiment:</p>
+            
+            <b> 18 years of age or older. <br></b>
+            <b> Fluent speaker of English. <br></b>
+            <b> Have not previously participated in this experiment. <br></b>
+
+            <p><br>This study is designed to investigate how people learn and make decisions. In this task, you will be asked to perform a sorting task and answer questions regarding the task. The study will take about <b>30-40 minutes</b> and will pay a base fee of <b>$3.00</b> plus a performance-dependent bonus of up to <b>$8.00</b>. The performance bonus is explained in more detail in the instructions that follow. </p>
+
+
+            <p>Your participation in this research is voluntary. You may refrain from answering any questions that make you uncomfortable and may withdraw your participation at any time without penalty by exiting this task and alerting the experimenter either via MTurk or via the e-mail address below (please be sure to provide your MTurk ID). You may choose not to complete certain parts of the task or answer certain questions. You may contact us at the address provided below if you have additional questions or concerns. </p>
+
+            <p>Other than monetary compensation, participating in this study will provide no direct benefits to you. But we hope that this research will benefit society at large by contributing towards establishing a scientific foundation for improving people’s learning abilities.</p>
+            
+            <p>Your online username may be connected to your individual responses, but we will not be asking for any additional personally identifying information, and we will handle responses as confidentially as possible. We cannot, however, guarantee the confidentiality of information transmitted over the Internet. We will be keeping deidentified data collected as part of this experiment indefinitely. Data used in scientific publications will remain completely anonymous.</p>
+
+            <p>If you have any questions about the study, feel free to contact our lab. Dr. Schulz and his labmembers can be reached at <font color="blue">cpilab@tuebingen.mpg.de</font>. </p>
+
+            <ul>
+                <li><b>By selecting the “consent” option below, I acknowledgethat that I have read this consent form, and that I agree to take part in the research.</b> </li>
+            </ul>
+            <br>
+            <button class='btn-primary text-xl' type="button" name="button" id="buttonBeginExperiment">I consent to participate</button><br><br>
+        </div>
+
+        <!--datenschutzerklärung -->
+        <div id="page2" style="width: 100%; overflow: scroll; display:none">
+            
+            <div id="instructions" style = "display:block">
+                <h3>Data Protection Information:</h3>
+                <p><br>We also ask you to consent to having seen and understood our data protection policy, which can be viewed by clicking on the blue text below.</p>
+                <p><br>I have received and took note of the written <a target="_blank" rel="noopener noreferrer" href="https://kyblab.tuebingen.mpg.de/sort/Datenschutz_Einwilligungserkl%c3%a4rung_Eric_Schulz.pdf">Data Protection Information Sheet</a> for this study. In doing so, I had sufficient time and opportunity to ask questions about data protection and reconsider my participation in the study. </p>
+                <br>
+                <p>I am aware that:</p>
+                <ul>
+                    <li>the processing and use of the collected data occurs in a pseudonymised form within the scope of the legally prescribed provisions.
+                        As a general rule, the storage occurs in the form of questionnaires, as well as on electronic data media, for a duration of 10 years
+                        or longer, if this is required by the purpose of the study.</li>
+                    <li>by providing of further personal data in pseudonymised form, collected personal data may be used for the preparation of anonymised
+                        scientific research work and may also be published and used in an anonymised form in medical journals, scientific publications
+                        and publicly accessible scientific databases, so that a direct assignment to my person cannot be established.</li>
+                    <li>the information obtained during the course of this study may also be sent in an anonymised form to cooperation partners within the
+                        scope of the European General Data Protection Regulation for scientific purposes and to cooperation partners outside of the
+                        European Union, i.e. to countries with a lower data protection level (this also applies to the USA).</li>
+                    <li>the data collected within the scope of the study can also be used and processed in the future inside of the Institute.</li>
+                  </ul> 
+                  <p>I was informed about my rights, that at any time:</p>
+                  <ul>
+                      <li>I can withdraw this declaration of consent.</li>
+                      <li>I can request information about my stored data and request the correction or blocking of data.</li>
+                      <li>By cancellation of my participation in the study, I can request that my personal data collected until that time are immediately deleted or anonymised.</li>
+                      <li>I can request that my personal data are handed out to me or to third parties (if technically feasible).</li>
+                  </ul>
+
+                  <p>I herewith declare that:</p>
+                  <ul>
+                      <li>I have been adequately informed about the collection and processing of my personal data and rights.</li>
+                      <li>I consent to the collection and processing of personal data within the scope of the study and its pseudonymised disclosure, so that
+                        only the persons conducting the study can establish a link between the data and my person.</li>
+                  </ul>
+
+                  <p>By clicking the button below I confirm and consent to what is written above.</p>
+                
+  
+                <br><br>
+            </div>
+                     
+            <button class='btn-primary text-xl' type="button" id="buttonInstructions">I consent</button><br><br>
+        </div>
+
+        <!--Instructions -->
+        <div id="page3" style="width: 100%; overflow: scroll; display:none">
+            
+            <div id="instructions" style = "display:block">
+                <h3>Structure of the Experiment:</h3>
+                <p><b>Thank you for participating in our study! </b></p>
+                <p><b>Please read the following instructions very carefully. You will be tested on your understanding later. </b></p>
+                <br>
+                <p>In the following, we will tell you how the study is structured and what you will have to do.</p>
+                <p>The study consists of 5 parts: <br><br></p>
+
+                <p><b>1. Experiment instructions and practice trials. (~5 min)</b></p>
+                <p>In this first part, we will explain how the experiment works and let you practice the task on a few trials.<br><br></p>
+
+                <p><b>2. Comprehension questions. (~1 min)</b></p>
+                <p>After the practice trials we will test your understanding of the task with three short questions. </p>
+                <p>You will need to get these questions right to continue on to the main experiment, so please read the instructions carefully. <br><br></p>
+
+                <p><b>3. Experiment. (~20-30 min)</b></p>
+                <p>After the comprehension questions the main experiment will start. Your bonus will depend on the percentage of trials you get correct in this part. </p>
+                <p>But please also be as <b>fast</b> as possible.<br><br></p>
+
+                <p><b>4. Colorblindness test. (~1 min)</b></p>
+                <p>As mentioned in the HIT description, this experiment requires you to be able to destinguish between the colors shown below.</p>
+                <p>If you have trouble differentiating these colors, you can stop the task and return to the HIT at no penalty.<br><br></p>
+                <img border="0" src="Stimuli/farben.png" align="center" style="width:600px;height:70px;"><br><br><br>
+
+                <p><b>5. Demographic questions. (~1-2 min)</b></p>
+                <p>At the very end we will ask you to answer a few final questions, before we send you off with the completion code you need to claim your payment.<br><br><br></p>
+
+                <h3>Thank you very much for taking part in our study! <br><br></h3>
+
+                <p>Once you press the <b>Start</b> button below the screen will turn grey and the instructions will start.<br></p>
+                
+            </div>
+                     
+            <button class='btn-primary text-xl' type="button" id="buttonInstructions">Start</button><br><br>
+        </div>
+
+        <!--Instructions -->
+        <div id="page4" style="width: 100%; overflow: scroll; display:none">
+            
+            <div id="instructions" style = "display:block">
+                <br><br><br><br><br><br>
+                <h3>One more thing before we start:</h3>
+                <br><br>
+                <p><b>Please do not use the back and forward buttons of the browser to navigate within this experiment. This might prevent the task from working correctly.</b></p>
+                <br>
+                <p>Now let's get started!</p>
+                <br>
+                <p>Once you press the button below, the screen will turn <b>grey</b> and the instructions for the experiment will start.</p>
+                <br><br>
+            </div>
+                     
+            <button class='btn-primary text-xl' type="button" id="buttonInstructions">Start</button><br><br>
+        </div>
+
+        
+        
+        <!--Demographic information -->
+        <div id="page5" style="display:none; text-align: left;">
+
+            <h2 class="text-xl">Ups. omething went wrong.</h2>
+            <br>
+            <fieldset>
+              <div>
+                Please check that your <b>MTurk ID</b> is correct. If not entered correctly, you may not be able to receive your bonus.<br><br>
+                <form>
+                    MTurk ID:<br>
+                    <input type="text" id="MTurkID"><br>
+                </form>
+                </div> <br>
+              <div>
+                How old are you?<br>
+                <input id="age" type="number" name="quantity" min="18" max="99">
+              </div><br>
+              <div>
+                What's your gender?<br>
+                <input id="gender1" type="radio" name="gender" value="0" > Female<br>
+                <input id="gender2" type="radio" name="gender" value="1" > Male<br>
+              </div><br>
+              <div>
+              <form>Please let us know what strategies you used: <br>
+                <textarea cols="40" rows="5" id = "processDescription" name="Comments"> Describe your strategy </textarea><br><br>
+              </form>
+              </div>
+              </fieldset>                    
+                    <div style="width:50px;margin:0 auto; float:left">
+                        <button class='btn-primary text-xl' type="button" id="finishButton">Finish</button>
+                    </div>
+        </div>
+        <!--Completion code -->
+        <div id="page6" style="display:none; text-align: center;">
+          <h3>You have now completed the experiment.</h3>
+            <div id="rewardText" class="text-l" > Congratulations! You have earned a bonus of $0.00 </div><br>
+            <div class="text-l"> To earn your base fee of $X.XX, please copy and paste the following completion code into the Amazon MTurk window for this HIT: <b>COMPLETION CODE</b> </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="js/experiment.js"></script>
+</body>
+<script>
+
+    // this addEvent listener makes sure, that the script only starts after the right button was pressed :)
+    document.body.addEventListener("click", event => {
+        if (event.target.nodeName == "BUTTON") {
+            if (event.target.textContent== "Start"){
+                //Capture user id and assignment id
+                assignmentId = turkGetParam('assignmentId');
+                workerId = turkGetParam('workerId');
+                //construct next page link with worker id and assignment id in the URI
+                nextPage = "practice_trials.html?" + "workerId=" + workerId + "&assignmentId=" + assignmentId; 
+                window.location.href = nextPage; //send them
+            }
+        }
+    });
+    
+
+</script>
+
+</html>
