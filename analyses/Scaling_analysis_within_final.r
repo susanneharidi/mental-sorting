@@ -1366,8 +1366,21 @@ BFPlot = corrplot(log10(mBFAll), type = "full", tl.col = "black", tl.srt = 45, i
                       col.lim = c(-absLogMax, absLogMax),
                       number.cex = 0.8,
                       na.label = "-")
-
-
+# plot only nLog N
+NLogN <- data.frame("M2" = c("Constant","Log","Linear","NLogN","Poli2","Expo"),
+                    "BF" = log10(mBFAll["NLogN",1:6]))
+NLogNFigure <- ggplot(NLogN, aes(x = M2, y = BF, color = M2, fill = M2))+
+  geom_bar(stat="identity")+
+  #minimal theme
+  theme_minimal()+
+  theme(legend.position = "None")+
+  #add xlab
+  xlab("Models")+
+  #add ylab
+  ylab("BF")+
+  #change font and text type
+  theme(text = element_text(size = 20, family = "sans"))
+NLogNFigure
 #############################################################################
 # comparing a model without structure to a model that contains structure for the sorting times
 #############################################################################
@@ -1406,4 +1419,43 @@ bayes_factor(mScalingLinear, mScalingLinearNoStructure)
 bayes_factor(mScalingLinearNoStructure, mScalingLinear)
 # results 20.05.2022 BF = 12.47824
 
-# no evicence for effects of Structure on the orting times
+# no evicence for effects of Structure on the sorting times
+
+#############################################################################
+# Plot how the different tranformations would scale
+##############################################################################
+SL = seq(1,10)
+# make a dataframe with all Sl tranformations
+constant = data.frame(scaling = "constant",
+                      values = SL*0+1,
+                      SL = SL)
+Log = data.frame(scaling = "Log",
+                      values = log10(SL),
+                 SL = SL)
+Linear = data.frame(scaling = "Linear",
+                 values = SL-1,
+                 SL = SL)
+NLogN = data.frame(scaling = "NLogN",
+                 values = SL*log10(SL),
+                 SL = SL)
+Poli = data.frame(scaling = "Polynomial (2)",
+                 values = SL^2,
+                 SL = SL)
+Expo = data.frame(scaling = "Exponential",
+                 values = exp(SL),
+                 SL = SL)
+SLdf = rbind(Log, Linear, NLogN)
+# plot the whole thing
+SlScalingPlot = ggplot(SLdf, aes(x = SL, y = values, color = scaling))+
+  geom_line()+
+  geom_vline(xintercept = 7, linetype="dashed")+
+  theme_minimal()+
+  xlab("Sequence Lengths")+
+  #add ylab
+  ylab('Scaled Time')+
+  #change fonts
+  theme(text = element_text(size = 25, family = "sans"), legend.position = "top")#
+
+ggsave(here("Figures", "SlScaling.png"), SlScalingPlot,  
+       width = 6, 
+       height = 6)
