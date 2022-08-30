@@ -259,6 +259,12 @@ dbars$queryRT <- dquery$rt
 d <- dbars
 
 
+############################################################################
+# drop irrelevant columns
+######################################################################
+drops <- c("timeMs", "timeMin", "score", "reward", "center_x", "center_y", "avg_frame_time", "trial_type", "TrialType")
+d <- d[ , !(names(d) %in% drops)]
+
 ################################################################
 # save the data frame with all the new variables
 ##############################################################
