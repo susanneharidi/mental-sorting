@@ -256,18 +256,33 @@ d$RTSort_MemoryNone <- as.numeric(as.character(d$RTSort_MemoryNone))
 dbars <- subset(d, Stimulus_type == "bars")
 dquery <- subset(d, Stimulus_type == "query")
 dbars$queryRT <- dquery$rt
-d <- dbars
+d1 <- dbars
 
-
-############################################################################
 # drop irrelevant columns
-######################################################################
 drops <- c("timeMs", "timeMin", "score", "reward", "center_x", "center_y", "avg_frame_time", "trial_type", "TrialType")
-d <- d[ , !(names(d) %in% drops)]
+d1 <- d1[ , !(names(d1) %in% drops)]
 
 ################################################################
 # save the data frame with all the new variables
 ##############################################################
 
+write.csv(x = d1, file = "data_to_work_with.csv")
 
-write.csv(x = d, file = "data_to_work_with.csv")
+################################################################################
+# make a second frame for interaction analysis
+###############################################################################
+
+dbars <- subset(d, Stimulus_type == "bars")
+dquery <- subset(d, Stimulus_type == "query")
+dbars$otherRT <- dquery$rt
+dquery$otherRT <- dbars$rt
+d2 <- rbind(dbars,dquery)
+
+# drop irrelevant columns
+d2 <- d2[ , !(names(d2) %in% drops)]
+
+################################################################
+# save the data frame with all the new variables
+##############################################################
+
+write.csv(x = d2, file = "data_to_work_with2.csv")

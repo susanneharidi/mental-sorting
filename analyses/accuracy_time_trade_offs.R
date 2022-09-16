@@ -143,3 +143,11 @@ ggsave(here("Figures", "AccurcayTimeTradeOffFigure.pdf"), plotAccuracyVStime,
        width = 10, 
        height = 10)
 
+###########################################################################
+# model logistic regression for the accuracy time trade of
+#########################################################################
+data <- subset(d, rt <= cutoff & Condition == "Sort" & queryRT <= cutoff)
+#accuracy ~ speed + ... + (1|participant ID)
+accuracyLogistic <- glm(correct ~ Number_of_Bars + rt + Structure + (Number_of_Bars + rt + Structure|subject_id),
+                        family = binomial(link='logit'),
+                        data = data)

@@ -120,7 +120,7 @@ vline.data <- ddply(dp , ~Structure + Condition, summarize, mean = mean(mistakes
 #plot errors
 plotMistakes <- ggplot(dp, aes(x = mistakes, fill = Structure, col = Structure), dotsize = 0) +
   #violin plot
-  geom_bar(position = "dodge")+
+  geom_bar(position = "dodge", alpha = 0.6)+
   geom_vline(aes(xintercept = mean, color = Structure), vline.data, linetype = "longdash")+
   #change fill
   scale_fill_manual(values = cbbPalette)+
@@ -145,7 +145,7 @@ plotMistakes
 mylabels = c("None", "Query", "Sequence ")
 barwidth = 0.7
 pErrors = ggplot(subset(d, correct == 0), aes( x= Number_of_Bars, fill=Structure)) + 
-  geom_bar(width = barwidth)+
+  geom_bar(position = "dodge")+
   theme_minimal()+
   #change fonts
   theme(text = element_text(size = textsize, family="sans"))+
@@ -155,13 +155,13 @@ pErrors = ggplot(subset(d, correct == 0), aes( x= Number_of_Bars, fill=Structure
   labs(x = "Sequence Length",
        y = "Number of Mistakes")+
   facet_grid(cols = vars(Condition))+
-  scale_y_continuous(limits = c(0,320), expand = c(0, 0))
+  scale_y_continuous(limits = c(0,75), expand = c(0, 0))
 
 pErrors
 
 # Accuracy over number of Bars
 pErrors2 = ggplot(subset(d, correct == 0), aes( x= Correct_Position, fill=Structure)) + 
-  geom_bar(width = barwidth)+
+  geom_bar(position = "dodge")+
   theme_minimal()+
   #change fonts
   theme(text = element_text(size=textsize, family="sans"))+
@@ -171,12 +171,12 @@ pErrors2 = ggplot(subset(d, correct == 0), aes( x= Correct_Position, fill=Struct
   labs(x = "Queried Position",
        y = "Number of Mistakes")+
   facet_grid(cols = vars(Condition))+
-  scale_y_continuous(limits = c(0,320), expand = c(0, 0))
+  scale_y_continuous(limits = c(0,75), expand = c(0, 0))
 pErrors2
 
 # Accuracy over number of Bars
 pCorrect_Position = ggplot(d, aes( x= Correct_Position, fill=Structure)) + 
-  geom_bar(width = barwidth)+
+  geom_bar(position = "dodge")+
   theme_minimal()+
   #change fonts
   theme(text = element_text(size = textsize, family="sans"))+
@@ -212,7 +212,7 @@ ggsave(here("Figures", "AccuracyFigure.pdf"), AccuracyFigure,
        width = 7, 
        height = 8)
 
-# last saved 27.07.2022 after exclusion correction
+# last saved 16.09.2022 after exclusion correction
 
 ###################################################################
 # Recall RT Figure

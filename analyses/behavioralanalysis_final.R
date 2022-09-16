@@ -56,6 +56,7 @@ myColors <- c("#a2f9ff","#00AFBB", "#ffe682", "#E7B800", "#fd8453", "#FC4E07")
 mylabels <- c("None Memory", "None Sort", "Query Memory", "Query Sort", "Sequence Memory", "Sequence Sort")
 alpha <- 0.7
 pd <- position_dodge(0.1)
+textsize <- 16
 
 #color pallette for three different groups
 cbbPalette <- c("grey50", "#0072B2", "#D55E00")
@@ -132,6 +133,131 @@ tab_model(mrtallStructCondition)
 # StructureQuery       -0.29      0.09    -0.47    -0.11 1.00     3373     5909
 # StructureSequence    -0.24      0.06    -0.35    -0.12 1.00     3857     8564
 # ConditionSort         0.42      0.07     0.29     0.56 1.00     4945     9155
+
+##############
+# Plot the Residuals
+###############
+residulas <- residuals(mrtallStructCondition)
+dp$Residuals <- residulas[,1]
+
+#get summarize data
+dRTSummary <- ddply(dp, ~Number_of_Bars + Condition + Structure + Stimulus_type, summarize, mu = mean(Residuals), se = se(Residuals))
+
+#start plotting the residuals
+pResiduals <- ggplot(dRTSummary, aes(x = Number_of_Bars, y = mu, col = Structure)) +
+  #points
+  geom_point(position = pd)+
+  #error bars
+  geom_errorbar(aes(ymin = mu-se, ymax = mu+se), width = 0, size = 1, position = pd) +
+  #lines
+  geom_line(position = pd, size = 1.2) +
+  scale_color_manual(values = cbbPalette)+
+  #legend on top
+  theme(strip.background = element_blank())+
+  #change x ticks
+  scale_x_continuous(breaks = round(seq(min(0), max(10), by = 1),1)) +
+  #change y ticks
+  scale_y_continuous(breaks = round(seq(min(0), max(10), by = 1),1)) +
+  #minimal theme
+  theme_minimal()+
+  #add xlab
+  xlab("Sequence Length")+
+  #add ylab
+  ylab('Mean Residualsin s (±SE)')+
+  #change fonts
+  theme(text = element_text(size = textsize, family = "sans"))+
+  #legend on top
+  theme(legend.position = "top")+
+  facet_grid(cols = vars(Condition))
+
+#show!
+pResiduals
+
+
+###################################################################
+# Full encoding RT model With Interactions
+###################################################################
+
+#create data set as before
+dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
+
+# The full Encoding RT model 
+mrtallStructConditionInter <- brm(rt ~ Number_of_Bars*(Structure + Condition) + (Number_of_Bars*(Structure + Condition) + Block|subject_id), 
+                             data = dp,
+                             iter = 10000,
+                             cores = 4,
+                             save_pars = save_pars(all = TRUE),
+                             seed = seed,
+                             file = "mrtallStructConditionNotLogInteractionFinal")
+# Model summary
+summary(mrtallStructConditionInter)
+# Check for convergence
+mcmc_plot(mrtallStructConditionInter, type = "trace")
+# Plot effects 
+mcmc_plot(mrtallStructConditionInter, type = "intervals", prob = 0.95)
+# only plot main populationlevel effects
+mcmc_plot(mrtallStructConditionInter, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
+  xlab("RT in s")+
+  theme_minimal()+
+  theme(text = element_text(size = 20, family = "sans"))+
+  scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", "Sequence Structure", "Sort Task", "Seq length*Query Struc", "Seq length*Seq Struc", "Seq length*Sort Task"))+# 
+  ggtitle("Raw RT analysis")
+pp_check(mrtallStructConditionInter, type = "ecdf_overlay")
+#visualize all effects
+plot(conditional_effects(mrtallStructConditionInter), points = FALSE)
+tab_model(mrtallStructConditionInter)
+
+
+# results form 14.09.2022
+#                                   Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept                           -0.17      0.16    -0.48     0.13 1.00     2239     3879
+# Number_of_Bars                       0.88      0.06     0.76     0.99 1.00     1225     2188
+# StructureQuery                       0.23      0.08     0.08     0.38 1.00     4904    10394
+# StructureSequence                   -0.10      0.06    -0.23     0.03 1.00    12236    14677
+# ConditionSort                       -0.13      0.07    -0.27     0.00 1.00     5923    12727
+# Number_of_Bars:StructureQuery       -0.14      0.04    -0.21    -0.07 1.00     3740     8916
+# Number_of_Bars:StructureSequence    -0.03      0.02    -0.08     0.01 1.00     9875    12994
+# Number_of_Bars:ConditionSort         0.16      0.03     0.11     0.21 1.00     7294    12127
+
+##############
+# Plot the Residuals of Model with Intercations
+###############
+residulas <- residuals(mrtallStructConditionInter)
+dp$Residuals <- residulas[,1]
+
+#get summarize data
+dRTSummary <- ddply(dp, ~Number_of_Bars + Condition + Structure + Stimulus_type, summarize, mu = mean(Residuals), se = se(Residuals))
+
+#start plotting the residuals
+pResiduals <- ggplot(dRTSummary, aes(x = Number_of_Bars, y = mu, col = Structure)) +
+  #points
+  geom_point(position = pd)+
+  #error bars
+  geom_errorbar(aes(ymin = mu-se, ymax = mu+se), width = 0, size = 1, position = pd) +
+  #lines
+  geom_line(position = pd, size = 1.2) +
+  scale_color_manual(values = cbbPalette)+
+  #legend on top
+  theme(strip.background = element_blank())+
+  #change x ticks
+  scale_x_continuous(breaks = round(seq(min(0), max(10), by = 1),1)) +
+  #change y ticks
+  scale_y_continuous(breaks = round(seq(min(0), max(10), by = 1),1)) +
+  #minimal theme
+  theme_minimal()+
+  #add xlab
+  xlab("Sequence Length")+
+  #add ylab
+  ylab('Mean Residualsin s (±SE)')+
+  #change fonts
+  theme(text = element_text(size = textsize, family = "sans"))+
+  #legend on top
+  theme(legend.position = "top")+
+  facet_grid(cols = vars(Condition))
+
+#show!
+pResiduals
 
 ###################################################################
 # Checking the effect of Block Number for encoding RT
