@@ -290,8 +290,10 @@ model_plotwithRecallRT <- mcmc_plot(mrtallincludingRecallRT, type = "areas", pro
   ggtitle("Encoding RT")
 model_plotwithRecallRT
 
-#############################################################################################################################################################
+##############################################################
 # sum of recall Rt and Encoding Rt together
+#############################################################
+
 d$fullRT <- d$rt + d$queryRT
 
 
@@ -325,8 +327,10 @@ SumRTModel_plot <- mcmc_plot(mFullRTallStructCondition, type = "areas", prob = 0
   scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", "Sequence Structure", "Sort Task"))+# 
   ggtitle("Recall + Encoding RT")
 SumRTModel_plot
+
 #####################################################################
 # look at trade-off between recall RT and encoding RT
+######################################################################
 
 dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
 dpSummary <- ddply(dp, ~ subject_id + Structure + Condition + Number_of_Bars, summarize, rt = mean(rt), queryRT = mean(queryRT))

@@ -167,7 +167,8 @@ mrtallStructCondition <- brm(rt ~ Number_of_Bars + Structure + Condition + (Numb
                              cores = 4,
                              save_pars = save_pars(all = TRUE),
                              seed = seed,
-                             file = "mrtallStructConditionNotLogFinal")
+                             family = exgaussian(),
+                             file = "mrtallStructConditionNotLogFinalEx")
 
 Model_Plot <-mcmc_plot(mrtallStructCondition, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
         geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
@@ -216,6 +217,7 @@ plotStrucDiffRT <- ggplot(dStrucDiffSummary, aes(x = Number_of_Bars, y = mu, col
   scale_y_continuous(breaks = round(seq(min(0), max(10), by = 1),1)) +
   #minimal theme
   theme_minimal()+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black")+
   #add xlab
   xlab("Sequence Length")+
   #add ylab
@@ -232,7 +234,7 @@ simulatedData <- data.frame(x = seq(1,7),
                             y = c(seq(1,7)*0.75, seq(1,3)*0.75, rep(3*0.75, 4)),
                             Structure = c(rep("None-Query", 7), rep("None-Seq", 7)))
 #start plotting
-plotStrucDiffSim <- ggplot(simulatedData, aes(x = x, y = y, col = Structure)) +
+plotStrucDiffSim <- ggplot(simulatedData, aes(x = x, y = y-0.5, col = Structure)) +
   #lines
   geom_line(position = pd, size = 1.2) +
   scale_color_manual(values = cbbPalette2)+
@@ -244,6 +246,7 @@ plotStrucDiffSim <- ggplot(simulatedData, aes(x = x, y = y, col = Structure)) +
   scale_y_continuous(breaks = round(seq(min(0), max(10), by = 1),1)) +
   #minimal theme
   theme_minimal()+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black")+
   #add xlab
   xlab("Sequence Length")+
   #add ylab
@@ -251,7 +254,7 @@ plotStrucDiffSim <- ggplot(simulatedData, aes(x = x, y = y, col = Structure)) +
   #change fonts
   theme(text = element_text(size = textsize, family = "sans"))+
   #legend on top
-  ylim(0, 7)+
+  ylim(-1, 6)+
   theme(legend.position = "top",
         axis.text.y = element_blank())
 
@@ -279,7 +282,7 @@ ggsave(here("Figures", "BehaviouralFigure.pdf"), BehaviouralFigure,
 
 #########################################################
 # prepare data
-############################################################
+#########################################################
 textsize <- 16
 #Only use the correct and the data that meet the rt cutoff criteria
 valid_data <- subset(d, rt <= rt_cutoff & MatchRTMemory <= rt_cutoff & correct == 1 & MatchCorrectMemory == 1 & Condition == "Sort" & queryRT <= rt_cutoff)

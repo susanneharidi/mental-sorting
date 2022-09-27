@@ -105,7 +105,8 @@ mrtallStructCondition <- brm(rt ~ Number_of_Bars + Structure + Condition + (Numb
                              cores = 4,
                              save_pars = save_pars(all = TRUE),
                              seed = seed,
-                             file = "mrtallStructConditionNotLogFinal")
+                             family = exgaussian(),
+                             file = "mrtallStructConditionNotLogFinalEx")
 # Model summary
 summary(mrtallStructCondition)
 # Check for convergence
@@ -123,16 +124,16 @@ mcmc_plot(mrtallStructCondition, type = "areas", prob = 0.95, variable = "^b_", 
 pp_check(mrtallStructCondition, type = "ecdf_overlay")
 #visualize all effects
 plot(conditional_effects(mrtallStructCondition), points = FALSE)
-tab_model(mrtallStructCondition)
+tab_model(mrtallStructCondition, transform = NULL)
 
 
-# results form 26.7.2022
-#                    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-# Intercept            -0.26      0.17    -0.60     0.09 1.00     2504     4533
-# Number_of_Bars        0.89      0.05     0.79     1.00 1.00     1560     3300
-# StructureQuery       -0.29      0.09    -0.47    -0.11 1.00     3373     5909
-# StructureSequence    -0.24      0.06    -0.35    -0.12 1.00     3857     8564
-# ConditionSort         0.42      0.07     0.29     0.56 1.00     4945     9155
+# results exgaussian 23.09.2022
+#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept             0.60      0.11     0.38     0.82 1.00     2362     4347
+# Number_of_Bars        0.66      0.04     0.57     0.75 1.00     1410     2866
+# StructureQuery       -0.26      0.07    -0.41    -0.12 1.00     3283     6181
+# StructureSequence    -0.17      0.04    -0.25    -0.09 1.00     3355     8744
+# ConditionSort         0.26      0.05     0.17     0.36 1.00     4700     8819
 
 ##############
 # Plot the Residuals
@@ -175,55 +176,55 @@ pResiduals
 
 
 ###################################################################
-# Full encoding RT model With Interactions
+# Full encoding RT model With Interactions Exgaussian
 ###################################################################
 
 #create data set as before
 dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
 
 # The full Encoding RT model 
-mrtallStructConditionInter <- brm(rt ~ Number_of_Bars*(Structure + Condition) + (Number_of_Bars*(Structure + Condition) + Block|subject_id), 
-                             data = dp,
-                             iter = 10000,
-                             cores = 4,
-                             save_pars = save_pars(all = TRUE),
-                             seed = seed,
-                             file = "mrtallStructConditionNotLogInteractionFinal")
+mrtallStructConditionInterExGaussian <- brm(rt ~ Number_of_Bars*(Structure + Condition) + (Number_of_Bars*(Structure + Condition) + Block|subject_id), 
+                                  data = dp,
+                                  iter = 10000,
+                                  cores = 4,
+                                  save_pars = save_pars(all = TRUE),
+                                  seed = seed,
+                                  family = exgaussian(),
+                                  file = "mrtallStructConditionInterExGaussianFinal")
 # Model summary
-summary(mrtallStructConditionInter)
+summary(mrtallStructConditionInterExGaussian)
 # Check for convergence
-mcmc_plot(mrtallStructConditionInter, type = "trace")
+mcmc_plot(mrtallStructConditionInterExGaussian, type = "trace")
 # Plot effects 
-mcmc_plot(mrtallStructConditionInter, type = "intervals", prob = 0.95)
+mcmc_plot(mrtallStructConditionInterExGaussian, type = "intervals", prob = 0.95)
 # only plot main populationlevel effects
-mcmc_plot(mrtallStructConditionInter, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+mcmc_plot(mrtallStructConditionInterExGaussian, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
   geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
   xlab("RT in s")+
   theme_minimal()+
   theme(text = element_text(size = 20, family = "sans"))+
   scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", "Sequence Structure", "Sort Task", "Seq length*Query Struc", "Seq length*Seq Struc", "Seq length*Sort Task"))+# 
   ggtitle("Raw RT analysis")
-pp_check(mrtallStructConditionInter, type = "ecdf_overlay")
+pp_check(mrtallStructConditionInterExGaussian, type = "ecdf_overlay")
 #visualize all effects
-plot(conditional_effects(mrtallStructConditionInter), points = FALSE)
-tab_model(mrtallStructConditionInter)
+plot(conditional_effects(mrtallStructConditionInterExGaussian), points = FALSE)
+tab_model(mrtallStructConditionInterExGaussian)
 
+# results 20.09.2022
+# Intercept                            0.63      0.11     0.42     0.83 1.00     2292     4677
+# Number_of_Bars                       0.66      0.05     0.56     0.75 1.00     1051     2574
+# StructureQuery                       0.31      0.07     0.16     0.45 1.00     2826     6701
+# StructureSequence                   -0.06      0.05    -0.16     0.04 1.00     6627    12078
+# ConditionSort                       -0.19      0.05    -0.29    -0.09 1.00     5454    11549
+# Number_of_Bars:StructureQuery       -0.16      0.04    -0.24    -0.08 1.00     2809     6619
+# Number_of_Bars:StructureSequence    -0.04      0.02    -0.08    -0.00 1.00     4952     9750
+# Number_of_Bars:ConditionSort         0.14      0.02     0.09     0.18 1.00     5160    10137
 
-# results form 14.09.2022
-#                                   Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-# Intercept                           -0.17      0.16    -0.48     0.13 1.00     2239     3879
-# Number_of_Bars                       0.88      0.06     0.76     0.99 1.00     1225     2188
-# StructureQuery                       0.23      0.08     0.08     0.38 1.00     4904    10394
-# StructureSequence                   -0.10      0.06    -0.23     0.03 1.00    12236    14677
-# ConditionSort                       -0.13      0.07    -0.27     0.00 1.00     5923    12727
-# Number_of_Bars:StructureQuery       -0.14      0.04    -0.21    -0.07 1.00     3740     8916
-# Number_of_Bars:StructureSequence    -0.03      0.02    -0.08     0.01 1.00     9875    12994
-# Number_of_Bars:ConditionSort         0.16      0.03     0.11     0.21 1.00     7294    12127
 
 ##############
 # Plot the Residuals of Model with Intercations
 ###############
-residulas <- residuals(mrtallStructConditionInter)
+residulas <- residuals(mrtallStructConditionInterExGaussian)
 dp$Residuals <- residulas[,1]
 
 #get summarize data
@@ -273,7 +274,8 @@ mrtallStructConditionBlock <- brm(rt ~ Number_of_Bars + Structure + Condition + 
                                   cores = 4,
                                   save_pars = save_pars(all = TRUE),
                                   seed = seed,
-                                  file = "mrtallStructConditionNotLogFinalBlock")
+                                  family = exgaussian(),
+                                  file = "mrtallStructConditionNotLogFinalBlockEx")
 # Model summary
 summary(mrtallStructConditionBlock)
 # Check for convergence
@@ -293,108 +295,14 @@ pp_check(mrtallStructConditionBlock, type = "ecdf_overlay")
 plot(conditional_effects(mrtallStructConditionBlock), points = FALSE)
 
 
-# results form 26.07.2022
-#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-# Intercept             0.34      0.15     0.05     0.63 1.00     2233     3963
-# Number_of_Bars        0.89      0.04     0.81     0.96 1.00     1371     2828
-# StructureQuery       -0.37      0.06    -0.49    -0.24 1.00     4370     8299
-# StructureSequence    -0.20      0.04    -0.28    -0.11 1.00     9517    13123
-# ConditionSort         0.38      0.05     0.28     0.48 1.00     5576     9152
-# Block                -0.13      0.02    -0.16    -0.10 1.00     4349     9398
-
-###################################################################
-# Full recall rt model 
-###################################################################
-
-#create data set as before
-dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
-
-# The full Recall RT model
-mRecallRTallStructCondition <- brm(queryRT ~ Number_of_Bars + Structure + Condition + (Number_of_Bars + Structure + Condition + Block|subject_id), 
-                                   data = dp,
-                                   iter = 10000,
-                                   cores = 4,
-                                   save_pars = save_pars(all = TRUE),
-                                   seed = seed,
-                                   file = "mmRecallRTallStructConditionNotLogFinal")
-# Model summary
-summary(mRecallRTallStructCondition)
-# Check for convergence
-mcmc_plot(mRecallRTallStructCondition, type = "trace")
-# Plot effects 
-mcmc_plot(mRecallRTallStructCondition, type = "intervals", prob = 0.95)
-# only plot main populationlevel effects
-mcmc_plot(mRecallRTallStructCondition, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
-  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
-  xlab("RT in s")+
-  theme_classic()+
-  theme(text = element_text(size = 15, family = "sans"))+
-  scale_y_discrete(labels = c("Intercept", "Number of Bars", "Query Structure", "Sequence Structure", "Sort Task"))+
-  ggtitle("Recall RT")
-pp_check(mRecallRTallStructCondition, type = "ecdf_overlay")
-#visualize all effects
-plot(conditional_effects(mRecallRTallStructCondition), points = FALSE)
-tab_model(mRecallRTallStructCondition)
-
-# results form 26.07.2022
-# Intercept             0.04      0.06    -0.08     0.17 1.00     2328     5941
-# Number_of_Bars        0.35      0.03     0.30     0.41 1.00     1411     2931
-# StructureQuery       -0.15      0.06    -0.26    -0.04 1.00     3877     7702
-# StructureSequence    -0.01      0.02    -0.06     0.03 1.00    10692    13260
-# ConditionSort         0.18      0.05     0.07     0.28 1.00     2616     5700
-
-
-###############################################################################
-###################################################################
-# include recall rt as a factor in encoding RT model
-###################################################################
-
-#create data set as before
-dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
-
-# regression
-mrtallincludingRecallRT <- brm(rt ~ Number_of_Bars + Structure + Condition + queryRT + (Number_of_Bars + Structure + Condition + queryRT + Block|subject_id), 
-                               data = dp,
-                               iter = 10000,
-                               cores = 4,
-                               save_pars = save_pars(all = TRUE),
-                               seed = seed,
-                               file = "mrtallincludingRecallRTNotLogFinal")
-summary(mrtallincludingRecallRT)
-# results 27.07.2022
-#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-# Intercept            -0.25      0.17    -0.58     0.07 1.00     2523     5367
-# Number_of_Bars        0.81      0.05     0.71     0.90 1.00     2217     4489
-# StructureQuery       -0.25      0.07    -0.39    -0.12 1.00     4047     8765
-# StructureSequence    -0.23      0.05    -0.33    -0.12 1.00     5152     9022
-# ConditionSort         0.36      0.06     0.24     0.48 1.00     5906    10569
-# queryRT               0.29      0.05     0.19     0.38 1.00     7826    12171
-
-# only plot main population level effects
-mcmc_plot(mrtallincludingRecallRT, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
-  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
-  xlab("RT in s")+
-  theme(text = element_text(size = 15, family = "sans"))+
-  theme_classic()+
-  scale_y_discrete(labels = c("Intercept",
-                              "Sequence Length",
-                              "Query Structure",
-                              "Sequence Structure",
-                              "Sort Task",
-                              "Recall RT"))+
-  ggtitle("Raw RT analysis including Recall RT as predictor")
-
-# Model summary
-summary(mrtallincludingRecallRT)
-# Check for convergence
-mcmc_plot(mrtallincludingRecallRT, type = "trace")
-# Plot effects 
-mcmc_plot(mrtallincludingRecallRT, type = "intervals", prob = 0.95)
-# only plot main populationlevel effects
-pp_check(mrtallincludingRecallRT, type = "ecdf_overlay")
-#visualize all effects
-plot(conditional_effects(mrtallincludingRecallRT), points = FALSE)
-tab_model(mrtallincludingRecallRT)
+# results Exgaussian 23.09.2022
+#                    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept             1.04      0.10     0.84     1.25 1.00     2491     4598
+# Number_of_Bars        0.66      0.03     0.60     0.73 1.00     1647     3318
+# StructureQuery       -0.33      0.05    -0.44    -0.22 1.00     4282     7589
+# StructureSequence    -0.16      0.03    -0.22    -0.11 1.00     8921    12676
+# ConditionSort         0.25      0.04     0.18     0.32 1.00     6035    10085
+# Block                -0.09      0.01    -0.12    -0.07 1.00     4416     7858
 
 
 ###########################################################################
@@ -416,22 +324,26 @@ mrtnoNoB <- brm(rt ~ Structure + Condition + (Number_of_Bars + Structure + Condi
                 save_pars = save_pars(all = TRUE),
                 control = list(max_treedepth = 15, adapt_delta = 0.99),
                 seed = seed,
-                file = "mrtnoNoBNotLogFinal")
+                family = exgaussian(),
+                file = "mrtnoNoBNotLogFinalEx")
 summary(mrtnoNoB)
-# results 07.08.2022
-# Intercept             1.06      0.30     0.46     1.65 1.01      337      719
-# StructureQuery       -0.29      0.15    -0.58     0.01 1.00     4602     8909
-# StructureSequence    -0.17      0.09    -0.34     0.03 1.00     7777     9366
-# ConditionSort         0.31      0.12     0.06     0.54 1.00     4220     8578
+
+# exgaussian 23.09.2022
+#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept             1.45      0.18     1.11     1.82 1.01      563     1245
+# StructureQuery       -0.42      0.12    -0.67    -0.18 1.00     3810     6190
+# StructureSequence    -0.09      0.06    -0.20     0.05 1.00     5072     9363
+# ConditionSort         0.17      0.08     0.01     0.33 1.00     2884     7765
+
 
 bayes_factor(mrtallStructCondition, mrtnoNoB)
-# results 07.08.2022
-#Warning messages:
-#  1: logml could not be estimated within maxiter, rerunning with adjusted starting value. 
-#Estimate might be more variable than usual. 
-#2: logml could not be estimated within maxiter, rerunning with adjusted starting value. 
-#Estimate might be more variable than usual. 
-# BF =  1726925481417150973224220426.00000
+# exgaussian 23.09.2022
+# Warning messages:
+#   1: logml could not be estimated within maxiter, rerunning with adjusted starting value. 
+# Estimate might be more variable than usual. 
+# 2: logml could not be estimated within maxiter, rerunning with adjusted starting value. 
+# Estimate might be more variable than usual. 
+# BF = 6191194495895217918082062666.00000
 
 #################################################################################
 # testing for Structure vs no Structure
@@ -448,20 +360,24 @@ mrtnoStructure <- brm(rt ~ Number_of_Bars + Condition + (Number_of_Bars + Struct
                       save_pars = save_pars(all = TRUE),
                       control = list(max_treedepth = 15, adapt_delta = 0.99),
                       seed = seed,
-                      file = "mrtnoStructureNotLogFinal")
+                      family = exgaussian(),
+                      file = "mrtnoStructureNotLogFinalEx")
 
 summary(mrtnoStructure)
-# results 07.08.2022
-# Intercept         -0.40      0.18    -0.75    -0.05 1.00     1945     3994
-# Number_of_Bars     0.88      0.06     0.77     1.00 1.00     1150     2529
-# ConditionSort      0.45      0.07     0.31     0.59 1.00     4712     9510
+# exgaussian 23.09.2022
+#                  Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept          0.48      0.12     0.25     0.71 1.00     2171     3598
+# Number_of_Bars     0.66      0.05     0.57     0.75 1.00     1323     2514
+# ConditionSort      0.26      0.05     0.16     0.37 1.00     3965     7872
 
 bayes_factor(mrtallStructCondition, mrtnoStructure)
-# results 07.08.2022
-#Warning message:
-#  logml could not be estimated within maxiter, rerunning with adjusted starting value. 
-#Estimate might be more variable than usual. 
-# BF = 9.28885
+# exgaussian 23.09.2022
+# BF =  395.17883
+# Warning messages:
+#   1: logml could not be estimated within maxiter, rerunning with adjusted starting value. 
+# Estimate might be more variable than usual. 
+# 2: logml could not be estimated within maxiter, rerunning with adjusted starting value. 
+# Estimate might be more variable than usual. 
 
 #################################################################################
 # testing for task Condition vs no task Condition
@@ -478,72 +394,223 @@ mrtnoCondition <- brm(rt ~ Number_of_Bars + Structure + (Number_of_Bars + Struct
                       save_pars = save_pars(all = TRUE),
                       control = list(max_treedepth = 15, adapt_delta = 0.99),
                       seed = seed,
-                      file = "mrtnoConditionNotLogFinal")
+                      family = exgaussian(),
+                      file = "mrtnoConditionNotLogFinalEx")
 
 summary(mrtnoCondition)
-# results 07.08.2022
-# Intercept             0.11      0.19    -0.27     0.48 1.00     1313     3152
-# Number_of_Bars        0.85      0.07     0.72     0.98 1.00      786     1403
-# StructureQuery       -0.37      0.10    -0.58    -0.17 1.00     1529     2877
-# StructureSequence    -0.23      0.06    -0.36    -0.10 1.01     1540     4601
 
+# exgaussian 23.09.2022
+#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept             0.90      0.12     0.67     1.13 1.00     1216     2667
+# Number_of_Bars        0.62      0.05     0.52     0.72 1.01      659     1664
+# StructureQuery       -0.31      0.08    -0.47    -0.15 1.00     1428     3290
+# StructureSequence    -0.16      0.05    -0.25    -0.08 1.00     1189     3552
 
 bayes_factor(mrtallStructCondition, mrtnoCondition)
-# results 29.06.2022
-# BF = 275273816.09508
-#Warning messages:
+# exgaussian 23.09.2022
+# bf = 222100.09266
+# Warning messages:
 #  1: logml could not be estimated within maxiter, rerunning with adjusted starting value. 
-#Estimate might be more variable than usual. 
-#2: logml could not be estimated within maxiter, rerunning with adjusted starting value. 
-#Estimate might be more variable than usual. 
-
-
-############################################################################
-# analyse the sum of recall Rt and Encoding Rt together
-############################################################################
-d$fullRT <- d$rt + d$queryRT
+# Estimate might be more variable than usual. 
+# 2: logml could not be estimated within maxiter, rerunning with adjusted starting value. 
+# Estimate might be more variable than usual.
 
 ###################################################################
-# model rt all structures + memory condition not log and scaled
+# Full RT Model with RT Type as interaction
 ###################################################################
 
 #create data set as before
-dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
+dp <- subset(d, rt <= rt_cutoff & correct == 1 & otherRT <= rt_cutoff)
 
-# regression
-mFullRTallStructCondition <- brm(fullRT ~ Number_of_Bars + Structure + Condition + (Number_of_Bars + Structure + Condition + Block|subject_id), 
-                                 data = dp,
-                                 iter = 10000,
-                                 cores = 4,
-                                 save_pars = save_pars(all = TRUE),
-                                 seed = seed,
-                                 file = "mFullRTallStructConditionNotLogFinal")
-
+# The full Encoding RT model 
+mrtallStructConditionRecallInteraction <- brm(rt ~ (Number_of_Bars + Structure + Condition) * Stimulus_type + ((Number_of_Bars + Structure + Condition + Block)*Stimulus_type|subject_id), 
+                                              data = dp,
+                                              iter = 10000,
+                                              cores = 4,
+                                              save_pars = save_pars(all = TRUE),
+                                              seed = seed,
+                                              family = exgaussian(),
+                                              file = "mrtallStructConditionNotLogRecallInteractionFinalEx")
 # Model summary
-summary(mFullRTallStructCondition)
-# results 07.08.2022
-# Intercept            -0.36      0.19    -0.72     0.03 1.00     3326     5759
-# Number_of_Bars        1.27      0.06     1.15     1.40 1.00     1355     3063
-# StructureQuery       -0.43      0.15    -0.72    -0.14 1.00     3216     5698
-# StructureSequence    -0.23      0.07    -0.37    -0.10 1.00     6255    10813
-# ConditionSort         0.62      0.11     0.41     0.83 1.00     5386    10352
-
-
+summary(mrtallStructConditionRecallInteraction)
 # Check for convergence
-mcmc_plot(mFullRTallStructCondition, type = "trace")
+mcmc_plot(mrtallStructConditionRecallInteraction, type = "trace")
 # Plot effects 
-mcmc_plot(mFullRTallStructCondition, type = "intervals", prob = 0.95)
-# only plot main population level effects
-mcmc_plot(mFullRTallStructCondition, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+mcmc_plot(mrtallStructConditionRecallInteraction, type = "intervals", prob = 0.95)
+# only plot main populationlevel effects
+mcmc_plot(mrtallStructConditionRecallInteraction, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
   geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
   xlab("RT in s")+
-  theme_classic()+
-  theme(text = element_text(size = 15, family = "sans"))+
-  scale_y_discrete(labels = c("Intercept", "Number of Bars", "Query Structure", "Sequence Structure", "Sort Task"))+# 
-  ggtitle("Raw Total (recall+encoding) RT analysis ")
-pp_check(mFullRTallStructCondition, type = "ecdf_overlay")
+  theme_minimal()+
+  theme(text = element_text(size = 20, family = "sans"))+
+  scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", 
+                              "Sequence Structure", "Sort Task", "Recall", 
+                              "Seq Len*Recall", "QueryStruc*Recall", "SeqStruc*Recall",
+                              "SortTask*Recall"))+# 
+  ggtitle("Ecoding vs. Recall RT analysis")
+pp_check(mrtallStructConditionRecallInteraction, type = "ecdf_overlay")
 #visualize all effects
-plot(conditional_effects(mFullRTallStructCondition), points = FALSE)
-tab_model(mFullRTallStructCondition)
+plot(conditional_effects(mrtallStructConditionRecallInteraction), points = FALSE)
+tab_model(mrtallStructConditionRecallInteraction)
 
+# Results Exgaussian 23.09.2022
+#                                        Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept                                0.60      0.09     0.42     0.77 1.00     2836     5329
+# Number_of_Bars                           0.60      0.04     0.52     0.67 1.00     1351     3047
+# StructureQuery                          -0.26      0.06    -0.39    -0.14 1.00     3605     6720
+# StructureSequence                       -0.16      0.03    -0.22    -0.11 1.00     5492     9719
+# ConditionSort                            0.23      0.04     0.15     0.31 1.00     5517    10222
+# Stimulus_typequery                       0.26      0.10     0.07     0.45 1.00     3340     6273
+# Number_of_Bars:Stimulus_typequery       -0.38      0.04    -0.45    -0.31 1.00     1783     3859
+# StructureQuery:Stimulus_typequery        0.17      0.06     0.06     0.28 1.00     6899    11675
+# StructureSequence:Stimulus_typequery     0.14      0.03     0.09     0.20 1.00    10989    12719
+# ConditionSort:Stimulus_typequery        -0.11      0.04    -0.19    -0.03 1.00     6221    10252
+
+
+#########################################################################
+# plotting the effects for recall and encoding Rt seperately
+######################################################################
+m = mrtallStructConditionRecallInteraction
+
+# plotting the effects seperatly
+drawsNob <- posterior_samples(m)$b_Number_of_Bars #effect of number of bars on encoding RT
+drawsNobRecall <- drawsNob + 
+  posterior_samples(m)$`b_Number_of_Bars:Stimulus_typequery`
+
+df1 = data.frame(draws = drawsNob,
+                 predictor = "SeqLen",
+                 RTType = "Encoding")
+df2 = data.frame(draws = drawsNobRecall,
+                 predictor = "SeqLen",
+                 RTType = "Recall")
+
+drawsStructureQuery <- posterior_samples(m)$b_StructureQuery 
+drawsStructureQueryRecall <- drawsStructureQuery + 
+  posterior_samples(m)$`b_StructureQuery:Stimulus_typequery`
+
+df3 = data.frame(draws = drawsStructureQuery,
+                 predictor = "StructureQuery",
+                 RTType = "Encoding")
+df4 = data.frame(draws = drawsStructureQueryRecall,
+                 predictor = "StructureQuery",
+                 RTType = "Recall")
+
+drawsStructureSequence <- posterior_samples(m)$b_StructureSequence #effect of number of bars on encoding RT
+drawsStructureSequenceRecall <- drawsStructureSequence + 
+  posterior_samples(m)$`b_StructureSequence:Stimulus_typequery`
+
+df5 = data.frame(draws = drawsStructureSequence,
+                 predictor = "StructureSequence",
+                 RTType = "Encoding")
+df6 = data.frame(draws = drawsStructureSequenceRecall,
+                 predictor = "StructureSequence",
+                 RTType = "Recall")
+
+drawsConditionSort <- posterior_samples(m)$b_ConditionSort #effect of number of bars on encoding RT
+drawsConditionSortRecall <- drawsConditionSort + 
+  posterior_samples(m)$`b_ConditionSort:Stimulus_typequery`
+
+df7 = data.frame(draws = drawsConditionSort,
+                 predictor = "ConditionSort",
+                 RTType = "Encoding")
+df8 = data.frame(draws = drawsConditionSortRecall,
+                 predictor = "ConditionSort",
+                 RTType = "Recall")
+
+# put all dataframes together for later plotting
+allEffects = rbind(df1, df2, df3, df4, df5, df6, df7, df8)
+
+
+# let the plotting begin
+plot <- ggplot(allEffects, aes(x = draws, y = predictor, fill = RTType))+
+  stat_halfeye()+
+  labs(x = "posterior estimate", y = NULL,
+       fill = "RT type") +
+  geom_vline(xintercept = 0)+
+  scale_y_discrete(labels = c("Sort Task", "Sequence Length", "Query Structure", "Sequence Structure" ))+
+  facet_grid(cols = vars(RTType))+
+  theme_clean() +
+  theme(legend.position = "bottom")
+plot
+
+
+##################################################################################
+# the following model does not converge!!!
+###################################################################
+# Full RT Model with RT Type and seq length as interaction
+###################################################################
+
+#create data set as before
+dp <- subset(d, rt <= rt_cutoff & correct == 1 & otherRT <= rt_cutoff)
+
+# The full Encoding RT model 
+mrtallRecallSeqLenInteraction <- brm(rt ~ Number_of_Bars * Stimulus_type * (Structure + Condition) +
+                                       ((Number_of_Bars + Stimulus_type + Structure + Condition + Block)|subject_id), 
+                                     data = dp,
+                                     iter = 10000,
+                                     cores = 4,
+                                     save_pars = save_pars(all = TRUE),
+                                     seed = seed,
+                                     family = exgaussian(),
+                                     file = "mrtallRecallSeqLenInteractionFinal")
+# Model summary
+summary(mrtallRecallSeqLenInteraction)
+# Check for convergence
+mcmc_plot(mrtallRecallSeqLenInteraction, type = "trace")
+# Plot effects 
+mcmc_plot(mrtallRecallSeqLenInteraction, type = "intervals", prob = 0.95)
+# only plot main populationlevel effects
+mcmc_plot(mrtallRecallSeqLenInteraction, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
+  xlab("RT in s")+
+  theme_minimal()+
+  theme(text = element_text(size = 20, family = "sans"))+
+  # scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", 
+  #                             "Sequence Structure", "Sort Task", "Recall", 
+  #                             "Seq Len*Recall", "QueryStruc*Recall", "SeqStruc*Recall",
+  #                             "SortTask*Recall"))+# 
+  ggtitle("Ecoding vs. Recall RT analysis")
+pp_check(mrtallRecallSeqLenInteraction, type = "ecdf_overlay")
+#visualize all effects
+plot(conditional_effects(mrtallRecallSeqLenInteraction), points = FALSE)
+tab_model(mrtallRecallSeqLenInteraction)
+
+# Results 26.09.2022
+#                                                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept                                               0.89      0.37     0.66     1.17 1.50        8       20
+# Number_of_Bars                                          0.53      0.09     0.42     0.59 1.45        9       11
+# Stimulus_typequery                                      0.16      0.18    -0.05     0.74 1.43        8       11
+# StructureQuery                                          0.32      0.14     0.16     0.78 1.36        9       11
+# StructureSequence                                      -0.20      0.33    -1.59    -0.01 1.55        7       11
+# ConditionSort                                          -0.05      0.08    -0.26     0.03 1.19       14       13
+# Number_of_Bars:Stimulus_typequery                      -0.34      0.17    -0.48    -0.25 1.38        9       11
+# Number_of_Bars:StructureQuery                          -0.16      0.15    -0.27    -0.14 1.57       10       13
+# Number_of_Bars:StructureSequence                       -0.02      0.19    -0.03     0.19 1.24       15       14
+# Number_of_Bars:ConditionSort                            0.05      0.20     0.04     0.10 1.35       15       25
+# Stimulus_typequery:StructureQuery                      -0.32      0.37    -1.77    -0.12 1.45        8       11
+# Stimulus_typequery:StructureSequence                    0.04      0.08    -0.14     0.17 1.28       19       26
+# Stimulus_typequery:ConditionSort                        0.02      0.05    -0.07     0.10 1.37        9       26
+# Number_of_Bars:Stimulus_typequery:StructureQuery        0.14      0.14     0.08     0.45 1.32       10       11
+# Number_of_Bars:Stimulus_typequery:StructureSequence     0.02      0.04    -0.01     0.06 1.18       22       27
+# Number_of_Bars:Stimulus_typequery:ConditionSort        -0.04      0.04    -0.06    -0.01 1.21       14       29
+
+# Warning messages:
+#   1: There were 268 divergent transitions after warmup. See
+# https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+# to find out why this is a problem and how to eliminate them. 
+# 2: There were 4731 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See
+# https://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
+# 3: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
+# https://mc-stan.org/misc/warnings.html#bfmi-low 
+# 4: Examine the pairs() plot to diagnose sampling problems
+# 
+# 5: The largest R-hat is NA, indicating chains have not mixed.
+# Running the chains for more iterations may help. See
+# https://mc-stan.org/misc/warnings.html#r-hat 
+# 6: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+# Running the chains for more iterations may help. See
+# https://mc-stan.org/misc/warnings.html#bulk-ess 
+# 7: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+# Running the chains for more iterations may help. See
+# https://mc-stan.org/misc/warnings.html#tail-ess 
 
