@@ -803,7 +803,7 @@ runHypoMutateOnData = function(start_particles, # generated particles
       # track mean accuracy
       accuracy[i,participant] <- mean(dout$correct)
       # track real RT
-      realRTs[i, participant] <- current_trial$RTSort_Memory
+      realRTs[i, participant] <- current_trial$rt
       # track real accuracy
       realAccuracy[i, participant] <- current_trial$correct
       

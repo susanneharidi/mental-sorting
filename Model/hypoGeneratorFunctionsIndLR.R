@@ -302,7 +302,7 @@ noisy_sort <- function(trial, threshold = 7, connections = 'a'){
       }
     }
   }
-
+  
   
   # add the connection if it was found
   if (connectNotFound == FALSE){
@@ -318,7 +318,7 @@ noisy_sort <- function(trial, threshold = 7, connections = 'a'){
           if (is.nan(as.numeric(collect[(mark+connect)]))){
             collect[(mark+connect)] = connections[(connect+1)]
           } else {
-          collect[(mark+connect):(length(collect)+1)] <- c(connections[(connect+1)], collect[(mark+connect):length(collect)])
+            collect[(mark+connect):(length(collect)+1)] <- c(connections[(connect+1)], collect[(mark+connect):length(collect)])
           }
         }
       }
@@ -341,8 +341,8 @@ noisy_sort <- function(trial, threshold = 7, connections = 'a'){
       foundBar = foundBar + 1
     }
   }
-
-
+  
+  
   collect <- collect[!is.nan(as.numeric(collect))]
   print("sorted Sequence")
   print(collect)
@@ -418,7 +418,7 @@ noisy_sort_backwards <- function(trial, threshold = 7, connections = 'a'){
       }
     }
   }
-
+  
   
   # add the connection if it was found
   if (connectNotFound == FALSE){
@@ -480,18 +480,18 @@ noisy_sort_backwards <- function(trial, threshold = 7, connections = 'a'){
 generateStartParticles = function(nOfBars = 7,
                                   nOfColors = 10){
   particle = list(threshold = nOfBars,
-                         connections = "a",
-                         startAtSmall = 1,
-                         transitionmatrix = matrix(1/nOfColors, nOfColors, nOfColors),
-                         directionprobs = c(0.5, 0.5), #first is the probability for starting at small and the second teh prob for starting at large
-                         thresholdprobs = c(integer(nOfBars-1), 1)) 
+                  connections = "a",
+                  startAtSmall = 1,
+                  transitionmatrix = matrix(1/nOfColors, nOfColors, nOfColors),
+                  directionprobs = c(0.5, 0.5), #first is the probability for starting at small and the second teh prob for starting at large
+                  thresholdprobs = c(integer(nOfBars-1), 1)) 
   return(particle)
 }
 
 update_directionprobs = function(relative_target_position, # target position/sequence length
-                                directionprobs, # vector with two entries that sum to 1, first is prob for start at small
-                                learningrate = 1,
-                                correct = 1){
+                                 directionprobs, # vector with two entries that sum to 1, first is prob for start at small
+                                 learningrate = 1,
+                                 correct = 1){
   if (correct == 0){
     # if the response was incorrect, increase uncertainty by adding the learningrate to all values
     # and normalizing the vector
@@ -545,14 +545,14 @@ updateParticle = function(particle,
                           threshold = TRUE, 
                           connectedness = TRUE,
                           startAtSmall = TRUE){
-
+  
   if(threshold == FALSE & connectedness == FALSE & startAtSmall == FALSE){
     print("particle could not be updated, because both threshold and connectedness 
           mutations where set to false, change those settings if you want to get updates")
     return(particle)
   }
   if (connectedness == TRUE){
-  # update connectedness
+    # update connectedness
     transitionmatrix = transitionmatrix_update(particle$transitionmatrix, 
                                                sortedSequence,
                                                learningrate,
@@ -586,7 +586,7 @@ updateParticle = function(particle,
     particle$thresholdprobs = new_thresholdprobs
     # make the mean position the threshold
     particle$threshold = round(sum(c(1:length(particle$thresholdprobs))*new_thresholdprobs))
-
+    
   }
   return(particle)
 }
@@ -612,7 +612,7 @@ runSimulation = function(start_particle, # the current particle
                                startAtSmall = as.integer(),
                                time = as.numeric(),
                                run = as.numeric())
-
+  
   # for 20 simulations in total
   for (n_runs in 1:total_runs){
     print("started run:")
@@ -681,7 +681,7 @@ runSimulation = function(start_particle, # the current particle
                                     connectedness = TRUE,
                                     startAtSmall = TRUE)
       }
-     
+      
       print("sorted sequence:")
       print(dout$sortedSequence)
       print("updated hypotheses")
@@ -697,7 +697,7 @@ runSimulation = function(start_particle, # the current particle
       
       
     }
-
+    
   }
   output <- list()
   output[[1]] <- times
@@ -718,11 +718,11 @@ runSimulation = function(start_particle, # the current particle
 # final hypotheses
 ###############################################################################
 runHypoLearnerOnData = function(start_particle, # the current particle
-                         data,
-                         learningrate = 1,
-                         learnThresholds = TRUE,
-                         learnConnectedness = TRUE,
-                         learnDirection = TRUE){
+                                data,
+                                learningrate,
+                                learnThresholds = TRUE,
+                                learnConnectedness = TRUE,
+                                learnDirection = TRUE){
   trials = 35
   n_participants = length(unique(data$subject_id))
   # matrix to collect run time
@@ -751,6 +751,7 @@ runHypoLearnerOnData = function(start_particle, # the current particle
   
   # for 20 simulations in total
   for (participant in 1:n_participants){
+    LR <- subset(learningrate, subject == data$subject_id[participant])$LR
     print("started run:")
     print(participant)
     # get current trial
@@ -786,7 +787,7 @@ runHypoLearnerOnData = function(start_particle, # the current particle
                        threshold = hypotheses$threshold, 
                        connections = hypotheses$connections, 
                        startAtSmall = hypotheses$startAtSmall)
-
+      
       # update time so that each hypotheses time reflects the average time
       hypotheses$time <- hypotheses$time*((i-1)/i) + (1/i)*dout$time
       # update accuracy
@@ -798,7 +799,7 @@ runHypoLearnerOnData = function(start_particle, # the current particle
                                     sortedSequence = dout$sortedSequence, 
                                     target_position = dout$target_position,
                                     sequence_length = length(trial$bar),
-                                    learningrate,
+                                    LR,
                                     correct = dout$correct,
                                     nOfBars = 7, 
                                     nOfMaxConnections = 3, 
@@ -825,7 +826,7 @@ runHypoLearnerOnData = function(start_particle, # the current particle
       
       
     }
-
+    
   }
   output <- list()
   output[[1]] <- times
@@ -844,7 +845,7 @@ runHypoLearnerOnData = function(start_particle, # the current particle
 # run model on all data
 ##############################################################################
 
-runHypoLearnerOnAllData = function(start_particle,
+runHypoLearnerOnAllDataIndLR = function(start_particle,
                                    AllData,
                                    learningrate,
                                    learnThresholds = TRUE,
@@ -992,12 +993,12 @@ calculateSquaredErrorMatrix <- function(output){
 getMSE <- function(start_particle, # the current particle
                    data,
                    learningrates #vector of learn ingrates that sorter is run on
-                   ){
+){
   allMSE <- c(1:length(learningrates))
   for (i in 1:length(learningrates)){
     output = runHypoLearnerOnData(start_particle, # the current particle
-                                   data,
-                                   learningrate = learningrates[i])
+                                  data,
+                                  learningrate = learningrates[i])
     allMSE[i] = calculateSquaredErrorMatrix(output)
   }
   MSEandLR = data.frame(Learningrate = learningrates,
@@ -1097,4 +1098,3 @@ ModelLLrawRT <- function(AllData, learningrate){
   
   return(LL)
 }
-

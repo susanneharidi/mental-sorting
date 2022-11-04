@@ -13,9 +13,14 @@ library(gridExtra)
 library(ggpubr)
 library(here)
 library(brms)
-library(ggpubr)
 library(stringr)
 library(readr)
+library(patchwork)  #https://github.com/thomasp85/patchwork
+library(scales)
+library(plot.matrix)
+library(RColorBrewer)
+library(corrplot)
+library(png)
 
 source(here("Model", "hypoGeneratorFunctions.R")) 
 
@@ -26,7 +31,7 @@ source(here("Model", "hypoGeneratorFunctions.R"))
 d <- read.csv(here("Data", "Experiment", "data_to_work_with.csv"))
 d$subject_id <- factor(d$subject_id)
 
-learningrate = 0.09
+
 
 ##################################################################################
 # set up hypothesis space
@@ -34,18 +39,22 @@ learningrate = 0.09
 
 start_particle = generateStartParticles(nOfBars = 7, nOfColors = 10)
 
-###########################
-# run sorter on all data
 ###############################
-ModelToData <- runHypoLearnerOnAllData(start_particle,
-                                       AllData = d,
-                                       learningrate)
+# run sorter on all data with the best LRs
+###############################
+bestLRs <- read.csv(here("Model", "FittedModelData", "hypoGeneratorBestHyperPsIndLL0_1.csv"))
+
+source(here("Model", "hypoGeneratorFunctionsIndLR.R")) 
+ModelToData <- runHypoLearnerOnAllDataIndLR(start_particle = generateStartParticles(nOfBars = 7, nOfColors = 10),
+                                            d,
+                                            bestLRs)
 
 #################################
 # save model to data dataframe for further analysis
 ###################################
-write_csv(ModelToData, here("Model", "FittedModelData", paste(as.character(learningrate), "hypoGeneratorfitted_BucketSort.csv", sep = "_")))
 
+write_csv(ModelToData, here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL0_1.csv"))
+ModelToData <- read.csv(here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL0_1.csv"))
 
 ##################################################################
 # plots of model run on real data
@@ -256,74 +265,63 @@ print(plotrtTrials)
 ##############################################################
 # show how well the real rts correspond to the models RTs
 ##########################################################
-ggplot(ModelToData, aes(x = time, y = realRT))+
-  geom_point()+
-  ylim(-10,10)+
-  geom_smooth()
+RTCutoff <- 10
+textsize <- 16
 
+modelData <- (subset(ModelToData, realAccuracy == 1 & realRT <= RTCutoff))
 
-###########
-# raw RT
-##############
-# this part is necesarry, so I can add the correct columns to the model dataframe
-relevantD <- subset(d, Condition == "Sort" & Stimulus_type == "bars")
-relevantD1 <- subset(relevantD, Structure == "Query")
-relevantD2 <- subset(relevantD, Structure == "Sequence")
-relevantD3 <- subset(relevantD, Structure == "None")
-relevantD <- rbind(relevantD1, relevantD2, relevantD3)
-
-ModelToData$rawRt <- relevantD$rt
-modelData <- (subset(ModelToData, realAccuracy == 1 & rawRt <= 10 ))
-
-ggplot(modelData, aes(x = time, y = rawRt, color = Structure))+
-  geom_point()+
+ModelvsDataPlot <- ggplot(modelData, aes(x = time, y = realRT, color = Structure))+
+  geom_point(alpha = 0.2)+
   theme(legend.position = "None")+
-  geom_smooth(data = modelData, aes(x = time, y = rawRt))+
+  geom_smooth(data = modelData, aes(x = time, y = realRT), method = lm)+
   theme_minimal()+
+  scale_x_continuous(breaks = c(0, 100, 200))+
   #change fill
   scale_fill_manual(values = cbbPalette)+
   #change color
   scale_color_manual(values = cbbPalette)+
-  theme(text = element_text(size = 20, family = "sans"), legend.position = "none")+
+  theme(text = element_text(size = textsize, family = "sans"), legend.position = "none")+
   xlab("Model Time")+
   #add ylab
-  ylab('Participant RT')+
+  ylab('Participant RT in s')+
   #change fonts
   facet_grid(cols = vars(Structure))
 
-########################################################################
+ModelvsDataPlot
+
+#######################################################################################
 # plotting the model that tries to emulate the effects of participant RT
-##########################################################################
+#############################################################################
+
 setwd(here("Model", "hypoFittingBrmModels"))
 EffectsModel <- brm(time ~ Structure + NoB + (Structure + NoB|participant),
-              data = modelData,
-              chains = 2,
-              save_pars = save_pars(all = TRUE),
-              control = list(max_treedepth = 15, adapt_delta = 0.99),
-              file = "hypoGeneratorEmulatingRTresultsBucketSort")
+                    data = modelData,
+                    chains = 2,
+                    save_pars = save_pars(all = TRUE),
+                    control = list(max_treedepth = 15, adapt_delta = 0.99),
+                    file = "hypoGeneratorEmulatingRTresultsBucketSortIndLRLL0_1")
 summary(EffectsModel)
-# results bucket sort 08.06.2022
-#                   Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-# Intercept            -0.18      0.03    -0.23    -0.13 1.00     2739     1692
-# StructureQuery       -0.28      0.02    -0.33    -0.24 1.00     2187     1611
-# StructureSequence    -0.15      0.03    -0.20    -0.09 1.00     1363     1437
-# NoB                   1.68      0.01     1.66     1.69 1.00     2362     1460
 
-# Results for no Structure Learning for Bucket sort 08.06.22
-#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-# Intercept            -1.00      0.00    -1.00    -1.00 1.91        3       24
-# StructureQuery        0.00      0.00     0.00     0.00 1.84        3       33
-# StructureSequence     0.00      0.00     0.00     0.00 1.33        5       50
-# NoB                   2.00      0.00     2.00     2.00 1.87        3       35
+# results 14.10.2022 (LL)
+#                    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept             0.15      0.03     0.08     0.21 1.00     2084     1551
+# StructureQuery       -0.51      0.03    -0.56    -0.46 1.00     2861     1365
+# StructureSequence    -0.27      0.05    -0.37    -0.17 1.00     1129     1315
+# NoB                   1.52      0.01     1.50     1.54 1.00     1136     1380
 
-mcmc_plot(EffectsModel, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+
+ModelofModelPlot <- mcmc_plot(EffectsModel, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
   geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
-  xlab("Model Time")+
+  xlab("Posterior estimates")+
   theme_minimal()+
-  theme(text = element_text(size = 15, family = "sans"))+
+  theme(text = element_text(size = 18, family = "sans"))+
   scale_y_discrete(labels = c("Intercept", "Query Structure", "Sequence Structure", "Sequence Length"))# 
 
+ModelofModelPlot
 
-
+ModelOutputPlot <- (plotNoB + ModelofModelPlot + plotrtTrials)/(plotFinalThresholds + plotFinalConnections + ModelvsDataPlot) +
+  plot_annotation(tag_levels = "A")+ 
+  plot_layout(guides = 'collect')
+ModelOutputPlot
 
 

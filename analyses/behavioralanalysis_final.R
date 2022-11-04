@@ -208,7 +208,7 @@ mcmc_plot(mrtallStructConditionInterExGaussian, type = "areas", prob = 0.95, var
 pp_check(mrtallStructConditionInterExGaussian, type = "ecdf_overlay")
 #visualize all effects
 plot(conditional_effects(mrtallStructConditionInterExGaussian), points = FALSE)
-tab_model(mrtallStructConditionInterExGaussian)
+tab_model(mrtallStructConditionInterExGaussian, transform = NULL)
 
 # results 20.09.2022
 # Intercept                            0.63      0.11     0.42     0.83 1.00     2292     4677
@@ -465,73 +465,6 @@ tab_model(mrtallStructConditionRecallInteraction)
 # StructureQuery:Stimulus_typequery        0.17      0.06     0.06     0.28 1.00     6899    11675
 # StructureSequence:Stimulus_typequery     0.14      0.03     0.09     0.20 1.00    10989    12719
 # ConditionSort:Stimulus_typequery        -0.11      0.04    -0.19    -0.03 1.00     6221    10252
-
-
-#########################################################################
-# plotting the effects for recall and encoding Rt seperately
-######################################################################
-m = mrtallStructConditionRecallInteraction
-
-# plotting the effects seperatly
-drawsNob <- posterior_samples(m)$b_Number_of_Bars #effect of number of bars on encoding RT
-drawsNobRecall <- drawsNob + 
-  posterior_samples(m)$`b_Number_of_Bars:Stimulus_typequery`
-
-df1 = data.frame(draws = drawsNob,
-                 predictor = "SeqLen",
-                 RTType = "Encoding")
-df2 = data.frame(draws = drawsNobRecall,
-                 predictor = "SeqLen",
-                 RTType = "Recall")
-
-drawsStructureQuery <- posterior_samples(m)$b_StructureQuery 
-drawsStructureQueryRecall <- drawsStructureQuery + 
-  posterior_samples(m)$`b_StructureQuery:Stimulus_typequery`
-
-df3 = data.frame(draws = drawsStructureQuery,
-                 predictor = "StructureQuery",
-                 RTType = "Encoding")
-df4 = data.frame(draws = drawsStructureQueryRecall,
-                 predictor = "StructureQuery",
-                 RTType = "Recall")
-
-drawsStructureSequence <- posterior_samples(m)$b_StructureSequence #effect of number of bars on encoding RT
-drawsStructureSequenceRecall <- drawsStructureSequence + 
-  posterior_samples(m)$`b_StructureSequence:Stimulus_typequery`
-
-df5 = data.frame(draws = drawsStructureSequence,
-                 predictor = "StructureSequence",
-                 RTType = "Encoding")
-df6 = data.frame(draws = drawsStructureSequenceRecall,
-                 predictor = "StructureSequence",
-                 RTType = "Recall")
-
-drawsConditionSort <- posterior_samples(m)$b_ConditionSort #effect of number of bars on encoding RT
-drawsConditionSortRecall <- drawsConditionSort + 
-  posterior_samples(m)$`b_ConditionSort:Stimulus_typequery`
-
-df7 = data.frame(draws = drawsConditionSort,
-                 predictor = "ConditionSort",
-                 RTType = "Encoding")
-df8 = data.frame(draws = drawsConditionSortRecall,
-                 predictor = "ConditionSort",
-                 RTType = "Recall")
-
-# put all dataframes together for later plotting
-allEffects = rbind(df1, df2, df3, df4, df5, df6, df7, df8)
-
-
-# let the plotting begin
-plot <- ggplot(allEffects, aes(x = draws, y = predictor, fill = RTType))+
-  stat_halfeye()+
-  labs(x = "posterior estimate", y = NULL,
-       fill = "RT type") +
-  geom_vline(xintercept = 0)+
-  scale_y_discrete(labels = c("Sort Task", "Sequence Length", "Query Structure", "Sequence Structure" ))+
-  facet_grid(cols = vars(RTType))+
-  theme_clean() +
-  theme(legend.position = "bottom")
-plot
 
 
 ##################################################################################

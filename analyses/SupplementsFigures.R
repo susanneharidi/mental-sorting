@@ -27,6 +27,10 @@ library(RColorBrewer)
 library(corrplot)
 library(ggpubr)
 library(png)
+library(tidyr)
+library(distributional)
+library(ggdist)
+library(sjPlot)
 
 #########################################################################
 # functions
@@ -106,6 +110,7 @@ RTExclusionPlot <- ggplot(dcutoff, aes(x = RT, y = prop, fill = RT)) +
   geom_text(aes(y = ypos, label = percent(prop/100)), color = "black", size = 2.5) +
   scale_fill_manual(values = c( "darkolivegreen3", "brown2"))
 RTExclusionPlot
+
 ##############################################################################
 
 #for accuracy we need all points, not only correct ones
@@ -140,6 +145,7 @@ plotMistakes <- ggplot(dp, aes(x = mistakes, fill = Structure, col = Structure),
   facet_grid(cols = vars(Condition))
 
 plotMistakes
+
 ##############################################################################################
 # Accuracy over number of Bars
 mylabels = c("None", "Query", "Sequence ")
@@ -217,117 +223,6 @@ ggsave(here("Figures", "AccuracyFigure.pdf"), AccuracyFigure,
 ###################################################################
 # Recall RT Figure
 ###################################################################
-#####################################################
-# Full Recall RT model
-textsize <- 16
-setwd(here("analyses", "brmModel"))
-#create data set as before
-dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
-
-# The full Recall RT model
-mRecallRTallStructCondition <- brm(queryRT ~ Number_of_Bars + Structure + Condition + (Number_of_Bars + Structure + Condition + Block|subject_id), 
-                                   data = dp,
-                                   iter = 10000,
-                                   cores = 4,
-                                   save_pars = save_pars(all = TRUE),
-                                   seed = seed,
-                                   file = "mmRecallRTallStructConditionNotLogFinal")
-# Model summary
-summary(mRecallRTallStructCondition)
-# results form 26.07.2022
-# Intercept             0.04      0.06    -0.08     0.17 1.00     2328     5941
-# Number_of_Bars        0.35      0.03     0.30     0.41 1.00     1411     2931
-# StructureQuery       -0.15      0.06    -0.26    -0.04 1.00     3877     7702
-# StructureSequence    -0.01      0.02    -0.06     0.03 1.00    10692    13260
-# ConditionSort         0.18      0.05     0.07     0.28 1.00     2616     5700
-
-# only plot main populationlevel effects
-RecallRTmodel_plot <- mcmc_plot(mRecallRTallStructCondition, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
-  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
-  xlab("Posterior Weights")+
-  theme_minimal()+
-  theme(text = element_text(size = textsize, family = "sans"))+
-  scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", "Sequence Structure", "Sort Task"))+
-  ggtitle("Recall RT")
-RecallRTmodel_plot
-
-###################################################################
-# include recall rt as a factor in encoding RT model
-
-#create data set as before
-dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
-
-# regression
-mrtallincludingRecallRT <- brm(rt ~ Number_of_Bars + Structure + Condition + queryRT + (Number_of_Bars + Structure + Condition + queryRT + Block|subject_id), 
-                               data = dp,
-                               iter = 10000,
-                               cores = 4,
-                               save_pars = save_pars(all = TRUE),
-                               seed = seed,
-                               file = "mrtallincludingRecallRTNotLogFinal")
-summary(mrtallincludingRecallRT)
-# results 28.06.2022
-#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-# Intercept            -0.25      0.16    -0.58     0.07 1.00     2064     3572
-# Number_of_Bars        0.82      0.05     0.72     0.91 1.00     1674     3394
-# StructureQuery       -0.26      0.07    -0.40    -0.12 1.00     3521     7460
-# StructureSequence    -0.23      0.05    -0.34    -0.12 1.00     3753     9952
-# ConditionSort         0.37      0.06     0.25     0.50 1.00     4160     8932
-# queryRT               0.26      0.05     0.17     0.35 1.00     5490    10482
-
-# only plot main population level effects
-model_plotwithRecallRT <- mcmc_plot(mrtallincludingRecallRT, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
-  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
-  xlab("Posterior Weights")+
-  theme_minimal()+
-  theme(text = element_text(size = textsize, family = "sans"))+
-  scale_y_discrete(labels = c("Intercept",
-                              "Sequence Length",
-                              "Query Structure",
-                              "Sequence Structure",
-                              "Sort Task",
-                              "Recall RT"))+
-  ggtitle("Encoding RT")
-model_plotwithRecallRT
-
-##############################################################
-# sum of recall Rt and Encoding Rt together
-#############################################################
-
-d$fullRT <- d$rt + d$queryRT
-
-
-#create data set as before
-dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
-
-# regression
-mFullRTallStructCondition <- brm(fullRT ~ Number_of_Bars + Structure + Condition + (Number_of_Bars + Structure + Condition + Block|subject_id), 
-                                 data = dp,
-                                 iter = 10000,
-                                 cores = 4,
-                                 save_pars = save_pars(all = TRUE),
-                                 seed = seed,
-                                 file = "mFullRTallStructConditionNotLogFinal")
-
-# Model summary
-summary(mFullRTallStructCondition)
-# results 29.06.2022
-# Intercept            -0.71      0.23    -1.17    -0.25 1.00     2533     4894
-# Number_of_Bars        1.37      0.08     1.21     1.54 1.00     1333     2699
-# StructureQuery       -0.35      0.17    -0.69    -0.02 1.00     3022     6378
-# StructureSequence    -0.23      0.09    -0.40    -0.06 1.00     5172    11796
-# ConditionSort         0.85      0.14     0.58     1.12 1.00     5137     9157
-
-
-SumRTModel_plot <- mcmc_plot(mFullRTallStructCondition, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
-  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
-  xlab("Posterior Weights")+
-  theme_minimal()+
-  theme(text = element_text(size = textsize, family = "sans"))+
-  scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", "Sequence Structure", "Sort Task"))+# 
-  ggtitle("Recall + Encoding RT")
-SumRTModel_plot
-
 #####################################################################
 # look at trade-off between recall RT and encoding RT
 ######################################################################
@@ -338,27 +233,145 @@ RTTradeoff_plot <- ggplot(dpSummary, aes(x = rt, y = queryRT, color = Structure,
   geom_point(alpha = 0.2)+
   scale_color_manual(values = cbbPalette)+
   geom_smooth(method = lm, se = FALSE)+
-  ylab("Recall RT")+
-  xlab("Encoding RT")+
+  ylab("Recall RT in s")+
+  xlab("Encoding RT in s")+
   scale_x_continuous(breaks = c(5, 10))+
   scale_y_continuous(breaks = c(5, 10))+
   theme_minimal()+
-  theme(text = element_text(size = textsize, family = "sans"),legend.position = "bottom")+
+  theme(text = element_text(size = textsize, family = "sans"),legend.position = "top")+
   facet_grid(rows = vars(Condition), cols = vars(Number_of_Bars))
 RTTradeoff_plot 
 
 
-RecallRTFigure <- (RecallRTmodel_plot + RTTradeoff_plot)/
-  (model_plotwithRecallRT + SumRTModel_plot) +  
-  plot_annotation(tag_levels = list(c("A", "B", "C")))
+#######################################################################
+# Recall and Encoding RT Model
+######################################################################
+setwd(here("analyses", "brmModel"))
+dp <- subset(d, rt <= rt_cutoff & correct == 1 & otherRT <= rt_cutoff)
+m <- brm(rt ~ (Number_of_Bars + Structure + Condition) * Stimulus_type + ((Number_of_Bars + Structure + Condition + Block)*Stimulus_type|subject_id), 
+              data = dp,
+              iter = 10000,
+              cores = 4,
+              save_pars = save_pars(all = TRUE),
+              seed = seed,
+              family = exgaussian(),
+              file = "mrtallStructConditionNotLogRecallInteractionFinalEx")
+
+tab_model(m, transform = NULL)
+# plotting the effects seperatly
+drawsNob <- posterior_samples(m)$b_Number_of_Bars #effect of number of bars on encoding RT
+drawsNobRecall <- drawsNob + 
+  posterior_samples(m)$`b_Number_of_Bars:Stimulus_typequery`
+
+df1 = data.frame(draws = drawsNob,
+                 predictor = "SeqLen",
+                 RTType = "Encoding")
+df2 = data.frame(draws = drawsNobRecall,
+                 predictor = "SeqLen",
+                 RTType = "Recall")
+
+drawsStructureQuery <- posterior_samples(m)$b_StructureQuery 
+drawsStructureQueryRecall <- drawsStructureQuery + 
+  posterior_samples(m)$`b_StructureQuery:Stimulus_typequery`
+
+df3 = data.frame(draws = drawsStructureQuery,
+                 predictor = "StructureQuery",
+                 RTType = "Encoding")
+df4 = data.frame(draws = drawsStructureQueryRecall,
+                 predictor = "StructureQuery",
+                 RTType = "Recall")
+
+drawsStructureSequence <- posterior_samples(m)$b_StructureSequence #effect of number of bars on encoding RT
+drawsStructureSequenceRecall <- drawsStructureSequence + 
+  posterior_samples(m)$`b_StructureSequence:Stimulus_typequery`
+
+df5 = data.frame(draws = drawsStructureSequence,
+                 predictor = "StructureSequence",
+                 RTType = "Encoding")
+df6 = data.frame(draws = drawsStructureSequenceRecall,
+                 predictor = "StructureSequence",
+                 RTType = "Recall")
+
+drawsConditionSort <- posterior_samples(m)$b_ConditionSort #effect of number of bars on encoding RT
+drawsConditionSortRecall <- drawsConditionSort + 
+  posterior_samples(m)$`b_ConditionSort:Stimulus_typequery`
+
+df7 = data.frame(draws = drawsConditionSort,
+                 predictor = "ConditionSort",
+                 RTType = "Encoding")
+df8 = data.frame(draws = drawsConditionSortRecall,
+                 predictor = "ConditionSort",
+                 RTType = "Recall")
+
+# put all dataframes together for later plotting
+allEffects <- rbind(df1, df2, df3, df4, df5, df6, df7, df8)
+meanEffect <- ddply(allEffects, ~ predictor + RTType, summarize, meanEffect = mean(draws))
+# get confidence intervals
+for (predict in unique(allEffects$predictor)){
+  for (RTtype in unique(allEffects$RTType)){
+    a = subset(allEffects, RTType == RTtype & predictor == predict)
+    print(RTtype)
+    print(predict)
+    print("lower bound:")
+    print(round(sort(a$draws)[500],2))
+    print("upper bound:")
+    print(round(sort(a$draws)[19500],2))
+  }
+}
+
+# let the plotting begin
+EncodingRecallplot <- ggplot(allEffects, aes(x = draws, y = predictor, fill = RTType))+
+  stat_halfeye()+
+  labs(x = "Posterior Estimate", y = NULL,
+       fill = "RT type") +
+  geom_vline(xintercept = 0)+
+  theme_minimal()+
+  theme(text = element_text(size = textsize, family = "sans"),legend.position = "bottom")+
+  scale_y_discrete(labels = c("Sort Task", "Sequence Length", "Query Structure", "Sequence Structure" ))+
+  facet_grid(cols = vars(RTType))+
+  theme(legend.position = "None")
+EncodingRecallplot
+
+
+RecallRTFigure <- (EncodingRecallplot + RTTradeoff_plot) +
+  plot_annotation(tag_levels = list(c("A", "B")))+
+  plot_layout(widths = c(3, 2))
 RecallRTFigure
 
 
-ggsave(here("Figures", "RecallRTFigure.pdf"), RecallRTFigure,  
+ggsave(here("Figures", "RecallRTFigure_new.pdf"), RecallRTFigure,  
        width = 10, 
-       height = 10)
+       height = 4)
 
+#################################################################################
+# Model behavioural output evaluator and mutator
+#################################################################################
+
+setwd(here("Model", "hypoFittingBrmModels"))
+EffectsModelMutator <- brm(time ~ Structure + NoB + (Structure + NoB|participant),
+                    data = modelData,
+                    chains = 2,
+                    save_pars = save_pars(all = TRUE),
+                    control = list(max_treedepth = 15, adapt_delta = 0.99),
+                    file = "hypoMutatorEmulatingRTresultsBucketSortIndHypoLL")
+
+ModelofModelPlotMutator <- mcmc_plot(EffectsModelMutator, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
+  xlab("Posterior Estimates")+
+  ggtitle("Hypotheses Mutator")+
+  theme_minimal()+
+  xlim(-1.5, 2)+
+  theme(text = element_text(size = 15, family = "sans"))+
+  scale_y_discrete(labels = c("Intercept", "Query Structure", "Sequence Structure", "Sequence Length"))
+ModelofModelPlotMutator
+
+
+ggsave(here("Figures", "ModelBehaviourSubs.pdf"), ModelofModelPlotMutator,  
+       width = 6, 
+       height = 4)
 
 ##############################################################
 # the accuracy time trade off figure can be found in the accuracy_time_trade_offs.R script
 ###############################################################
+
+

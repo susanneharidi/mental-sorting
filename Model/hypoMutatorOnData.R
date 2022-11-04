@@ -14,8 +14,13 @@ library(gridExtra)
 library(ggpubr)
 library(here)
 library(brms)
-library(ggpubr)
 library(readr)
+library(patchwork)  #https://github.com/thomasp85/patchwork
+library(scales)
+library(plot.matrix)
+library(RColorBrewer)
+library(corrplot)
+library(png)
 
 source(here("Model", "hypoMutatorFunctions.R")) 
 
@@ -26,34 +31,68 @@ d <- read.csv(here("Data", "Experiment", "data_to_work_with.csv"))
 d$subject_id <- factor(d$subject_id)
 
 
-
-nStartParticles = 15
-particles_to_mutate = 1
-
-particles = generateRandomParticles(nOfParticles = nStartParticles, 
-                                    nOfBars = 7, 
-                                    nOfMaxConnections = 3, 
-                                    threshold = TRUE, 
-                                    connectedness = TRUE,
-                                    startAtSmall = TRUE)
-
 ##############################################################
 # run hypo mutator on all data
 ################################################################
 
-output <- runHypoMutateOnAllData(particles,
-                                 d,
-                                 particles_to_mutate)
+bestHyperPs <- read.csv(here("Model", "FittedModelData", "hypoMutatorBestHyperPsIndLL.csv"))
 
-ModelToData <- output[[1]]
-allfinalHypo <- output[[2]]
+###########################################################
+# run this on one participant at a time
+############################################################
+
+subjects <- unique(d$subject_id)
+
+
+ModelToData <- data.frame(NoB = numeric(),
+                          time = numeric(),
+                          realRT = numeric(),
+                          accuracy = numeric(),
+                          realAccuracy = numeric(),
+                          trueConnection = character(),
+                          participant = character(),
+                          Structure = character(),
+                          trial = numeric())
+allfinalHypo <- data.frame(threshold = numeric(),
+                           connections = character(),
+                           startAtSmall = numeric(),
+                           time = numeric(),
+                           correct = numeric(),
+                           run = numeric(),
+                           Structure = character(),
+                           trueConnection = character())
+
+for (currentsubject in subjects){
+  currentHyperPs <- subset(bestHyperPs, subject == currentsubject)
+  nStartParticles <- currentHyperPs$nStartParticles
+  particles_to_mutate = currentHyperPs$particles_to_mutate
+  currtentData <- subset(d, subject_id == currentsubject)
+  
+  particles = generateRandomParticles(nOfParticles = nStartParticles, 
+                                      nOfBars = 7, 
+                                      nOfMaxConnections = 3, 
+                                      threshold = TRUE, 
+                                      connectedness = TRUE,
+                                      startAtSmall = TRUE)
+  
+  ##############################################################
+  # run hypo mutator on all data
+  ################################################################
+  
+  output <- runHypoMutateOnAllData(particles,
+                                   currtentData,
+                                   particles_to_mutate)
+  
+  ModelToData <- rbind(ModelToData, output[[1]])
+  allfinalHypo <- rbind(allfinalHypo, output[[2]])
+}
 
 #################################
 # save model to data dataframe for further analysis
 ###################################
-write_csv(ModelToData, here("Model", "FittedModelData", paste(as.character(nStartParticles), as.character(particles_to_mutate), "hypoMutatorfitted_BucketSort.csv", sep = "_")))
-# load the data if it has already been saved before (this will not allow all plotting below)
-ModelToData <- read.csv(here("Model", "FittedModelData",paste(as.character(nStartParticles), as.character(particles_to_mutate), "hypoMutatorfitted_BucketSort.csv", sep = "_")))
+
+write_csv(ModelToData, here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL.csv"))
+ModelToData <- read.csv(here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL.csv"))
 
 ############################################
 # plot the output of the model
@@ -208,29 +247,15 @@ print(plotrtTrials)
 ##############################################################
 # show how well the real rts correspond to the models RTs
 ##########################################################
-ggplot(ModelToData, aes(x = time, y = realRT))+
-  geom_point()+
-  ylim(-10,10)+
-  geom_smooth()
-
-
-###########
-# raw RT
 ##############
-# this part is necesarry, so I can add the correct columns to the model dataframe
-relevantD <- subset(d, Condition == "Sort" & Stimulus_type == "bars")
-relevantD1 <- subset(relevantD, Structure == "Query")
-relevantD2 <- subset(relevantD, Structure == "Sequence")
-relevantD3 <- subset(relevantD, Structure == "None")
-relevantD <- rbind(relevantD1, relevantD2, relevantD3)
+# real RT
+##############
+modelData <- (subset(ModelToData, realAccuracy == 1 & realRT <= 10 ))
 
-ModelToData$rawRt <- relevantD$rt
-modelData <- (subset(ModelToData, realAccuracy == 1 & rawRt <= 10 ))
-
-ggplot(modelData, aes(x = time, y = rawRt, color = Structure))+
-  geom_point()+
+ModelvsDataPlot <- ggplot(modelData, aes(x = time, y = realRT, color = Structure))+
+  geom_point(alpha = 0.2)+
   theme(legend.position = "None")+
-  geom_smooth(data = modelData, aes(x = time, y = rawRt), method = lm)+
+  geom_smooth(data = modelData, aes(x = time, y = realRT), method = lm)+
   theme_minimal()+
   #change fill
   scale_fill_manual(values = cbbPalette)+
@@ -243,6 +268,7 @@ ggplot(modelData, aes(x = time, y = rawRt, color = Structure))+
   #change fonts
   facet_grid(cols = vars(Structure))
 
+ModelvsDataPlot
 
 ########################################################################
 # plotting the model that tries to emulate the effects of participant RT
@@ -253,18 +279,25 @@ EffectsModel <- brm(time ~ Structure + NoB + (Structure + NoB|participant),
                     chains = 2,
                     save_pars = save_pars(all = TRUE),
                     control = list(max_treedepth = 15, adapt_delta = 0.99),
-                    file = "hypoMutatorEmulatingRTresultsBucketSort_15_1")
+                    file = "hypoMutatorEmulatingRTresultsBucketSortIndHypoLL")
 summary(EffectsModel)
-# results 15.06.2022
+# results 13.10.2022
 #                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-# Intercept             0.13      0.04     0.05     0.21 1.00     1176     1509
-# StructureQuery       -1.14      0.05    -1.26    -1.04 1.00      896     1407
-# StructureSequence     0.01      0.05    -0.09     0.09 1.00     1156     1601
-# NoB                   1.59      0.01     1.57     1.62 1.00      829     1254
+# Intercept             0.12      0.05     0.02     0.22 1.00      864     1396
+# StructureQuery       -0.87      0.06    -0.99    -0.76 1.00      826      932
+# StructureSequence     0.08      0.04     0.01     0.16 1.00     1899     1555
+# NoB                   1.54      0.02     1.50     1.57 1.00      730     1092
 
-mcmc_plot(EffectsModel, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+
+ModelofModelPlot <- mcmc_plot(EffectsModel, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
   geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
-  xlab("Model Time")+
+  xlab("Posterior estimates")+
   theme_minimal()+
   theme(text = element_text(size = 15, family = "sans"))+
   scale_y_discrete(labels = c("Intercept", "Query Structure", "Sequence Structure", "Sequence Length"))
+ModelofModelPlot
+
+ModelOutputPlot <- (plotNoB + ModelofModelPlot + plotrtTrials)/(plotFinalThresholds + plotFinalConnections + ModelvsDataPlot) +
+  plot_annotation(tag_levels = "A")+ 
+  plot_layout(guides = 'collect')
+ModelOutputPlot

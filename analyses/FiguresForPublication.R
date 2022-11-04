@@ -174,6 +174,7 @@ Model_Plot <-mcmc_plot(mrtallStructCondition, type = "areas", prob = 0.95, varia
         geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
         xlab("Posterior Weights")+
         theme_minimal()+
+        ggtitle("Encoding RT")+
         theme(text = element_text(size = textsize, family = "sans"))+
         scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", "Sequence Structure", "Sort Task"))
 Model_Plot
@@ -222,6 +223,7 @@ plotStrucDiffRT <- ggplot(dStrucDiffSummary, aes(x = Number_of_Bars, y = mu, col
   xlab("Sequence Length")+
   #add ylab
   ylab('Mean RT Gain in s')+
+  #ggtitle("Data")+
   #change fonts
   theme(text = element_text(size = textsize, family = "sans"))+
   #legend on top
@@ -251,6 +253,7 @@ plotStrucDiffSim <- ggplot(simulatedData, aes(x = x, y = y-0.5, col = Structure)
   xlab("Sequence Length")+
   #add ylab
   ylab('RT Gain')+
+  #ggtitle("Prediction")+
   #change fonts
   theme(text = element_text(size = textsize, family = "sans"))+
   #legend on top
@@ -529,15 +532,16 @@ dfDiffDiffBF <- data.frame(BF = c(BFDiffDiffConstantLinearNone$bf,
                            Structure = c("None", "Query", "Sequence"))
 #color pallette for three different groups
 cbbPalette <- c("grey50", "#0072B2", "#D55E00")
-EvidenceForLinearPlot <- ggplot(dfDiffDiffBF, aes(x = Structure, y = BF, fill = Structure))+
-            geom_bar(stat = "identity")+
+EvidenceForLinearPlot <- ggplot(dfDiffDiffBF, aes(x = Structure, y = log10(BF), fill = Structure, color = Structure))+
+            geom_point(stat = "identity", size = 5)+
             #change font and text type
             theme(text = element_text(size = textsize, family = "sans"))+
             theme_minimal()+
-            ylab('Bayes Factor')+
+            ylab('Log of Bayes Factor')+
+            ylim(-0.5,1.2)+
             theme(legend.position = "none",
                   text = element_text(size = textsize, family="sans"))+
-            geom_hline(yintercept = 1, linetype = "longdash", color = "black")+
+            geom_hline(yintercept = 0, linetype = "longdash", color = "black")+
             #change fill
             scale_fill_manual(values = cbbPalette)+
             #change color
@@ -550,7 +554,7 @@ ScalingFigure <- (plot_scalingWithin + plot_scalingWithin) / (plot_scalingDiffWi
   plot_annotation(tag_levels = "A")
 ScalingFigure 
 
-ggsave(here("Figures", "ScalingFigure.png"), ScalingFigure,  
+ggsave(here("Figures", "ScalingFigure_dot.png"), ScalingFigure,  
        width = 9, 
        height = 7)
 
@@ -562,29 +566,20 @@ ggsave(here("Figures", "ScalingFigure.png"), ScalingFigure,
 # Model Output Figure
 ######################################################################################
 
-source(here("Model", "hypoGeneratorFunctions.R")) 
-
 ###############################################################################################################
 #######################################################################################
 # run hypo learner on data
 #######################################################################################
+source(here("Model", "hypoGeneratorFunctions.R")) 
 d <- read.csv(here("Data", "Experiment", "data_to_work_with.csv"))
 d$subject_id <- factor(d$subject_id)
 
-learningrate = 0.09
 rt_cutoff = 10
-#######################################################################################
-# set up hypothesis space
-#######################################################################################
-
-start_particle = generateStartParticles(nOfBars = 7, nOfColors = 10)
 
 #######################################################################################
-# run sorter on all data
+# gtw thw data where the sorter was run on all data with the best hyper-parameters for each participant
 #######################################################################################
-ModelToData <- runHypoLearnerOnAllData(start_particle,
-                                       AllData = d,
-                                       learningrate)
+ModelToData <- read.csv(here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL0_1.csv"))
 
 #######################################################################################
 # plot all thresholds
@@ -747,11 +742,11 @@ EffectsModel <- brm(time ~ Structure + NoB + (Structure + NoB|participant),
                     chains = 2,
                     save_pars = save_pars(all = TRUE),
                     control = list(max_treedepth = 15, adapt_delta = 0.99),
-                    file = "hypoGeneratorEmulatingRTresultsBucketSort")
+                    file = "hypoGeneratorEmulatingRTresultsBucketSortIndLRLL0_1")
 
 ModelofModelPlot <- mcmc_plot(EffectsModel, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
   geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
-  xlab("Model Time")+
+  xlab("Posterior Estimates")+
   theme_minimal()+
   theme(text = element_text(size = textsize, family = "sans"))+
   scale_y_discrete(labels = c("Intercept", "Query Structure", "Sequence Structure", "Sequence Length"))# 
@@ -763,6 +758,6 @@ ModelOutputPlot <- (plotNoB + ModelofModelPlot + plotrtTrials)/(plotFinalThresho
   plot_layout(guides = 'collect')
 ModelOutputPlot
 
-ggsave(here("Figures", "ModelOutputFigure.pdf"), ModelOutputPlot,  
+ggsave(here("Figures", "ModelOutputFigure0_1.pdf"), ModelOutputPlot,  
        width = 14, 
        height = 7)
