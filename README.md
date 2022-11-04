@@ -48,3 +48,8 @@ Each row in the file is one trial and the variables of this dataframe are as fol
 ### 3. The Sorting Models
 
 
+There are two models:
+1. The hypotheses mutator
+2. The hypotheses generator
+The function scripts of these models are the core and define how the models work.  The hyperparameter selcection scripts determine the hyperparameters resulting in the lowest log-likelihood for each participants via a gridsearch. And last but not least the, the onData scripts run the models with the selected hyperparameters on the trials, that the participants observed.
+Additionally, the model comparison script contains the analysis which was presented in the paper.
