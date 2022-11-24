@@ -101,8 +101,8 @@ dl <- data.frame(r2 = c(lMutator, lGenerator),
 dl
 # 28.10.2022
 #       r2                model
-# 1 0.6366641   Hypothesis Mutator
-# 2 0.6480595 Hypothesis Generator
+# 1 0.6365322 Hypothesis Mutator
+# 2 0.6480957 Hypothesis Generator
 
 ############################################################
 # Calulate BFs for the models
@@ -212,7 +212,7 @@ ModelComparisonFigure <- ggplot(dl, aes(x = model, y = r2, color = model, fill =
   scale_fill_manual(values = cbbPalette)+
   #change color
   scale_color_manual(values = cbbPalette)+
-  scale_x_discrete(guide = guide_axis(n.dodge = 2), 
+  scale_x_discrete(#guide = guide_axis(n.dodge = 2), 
                    labels = c("Mutator", "Generator"))+
   #add xlab
   xlab("Models")+
