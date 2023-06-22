@@ -214,11 +214,11 @@ AccuracyFigure <- ExlusionPlot / figure_mistakes +
   plot_layout(ncol = 1, heights = c(1, 2))
 AccuracyFigure 
 
-ggsave(here("Figures", "AccuracyFigure.pdf"), AccuracyFigure,  
+ggsave(here("Figures", "FigureC1_Accuracy.pdf"), AccuracyFigure,  
        width = 7, 
        height = 8)
 
-# last saved 16.09.2022 after exclusion correction
+# last saved 22.06.2023 just before revised submission
 
 ###################################################################
 # Recall RT Figure
@@ -236,7 +236,7 @@ RTTradeoff_plot <- ggplot(dpSummary, aes(x = rt, y = queryRT, color = Structure,
   ylab("Recall RT in s")+
   xlab("Encoding RT in s")+
   scale_x_continuous(breaks = c(5, 10))+
-  scale_y_continuous(breaks = c(5, 10))+
+  #scale_y_continuous(breaks = c(5, 10))+
   theme_minimal()+
   theme(text = element_text(size = textsize, family = "sans"),legend.position = "top")+
   facet_grid(rows = vars(Condition), cols = vars(Number_of_Bars))
@@ -332,16 +332,55 @@ EncodingRecallplot <- ggplot(allEffects, aes(x = draws, y = predictor, fill = RT
   theme(legend.position = "None")
 EncodingRecallplot
 
+#######################################################################
+# Summed RT Model
+######################################################################
+setwd(here("analyses", "brmModel"))
+d2 <- read.csv(here("Data", "Experiment", "data_to_work_with2.csv"))
+#create data set as before
+dp <- subset(d2, rt <= rt_cutoff & correct == 1 & otherRT <= rt_cutoff & Stimulus_type == "bars")
+dp$summedRT <- dp$rt + dp$otherRT
 
+# The full Encoding RT model 
+mrtSummedallStructConditionNotLogFinalEx <- brm(summedRT ~ Number_of_Bars + Structure + Condition + (Number_of_Bars + Structure + Condition + Block|subject_id), 
+                                                data = dp,
+                                                iter = 10000,
+                                                cores = 4,
+                                                save_pars = save_pars(all = TRUE),
+                                                seed = seed,
+                                                control = list(max_treedepth = 15, adapt_delta = 0.99),
+                                                family = exgaussian(),
+                                                file = "mrtSummedallStructConditionNotLogFinalEx")
+
+summedRTPlot <- mcmc_plot(mrtSummedallStructConditionNotLogFinalEx, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
+  xlab("Posterior Estimate")+
+  theme_minimal()+
+  theme(text = element_text(size = textsize, family = "sans"))+
+  scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", "Sequence Structure", "Sort Task"))# 
+summedRTPlot
+
+##################################################################
+# Final Plot Recall RT sub figure
+##################################################################
+
+# adjusted figure after review
+RecallRTFigure <- (EncodingRecallplot / 
+                     ((RTTradeoff_plot + theme(axis.title.y = element_text(margin = margin(r = -75, unit = "pt")))) + summedRTPlot)) +
+  plot_annotation(tag_levels = list(c("A", "B", "C")))
+  #plot_layout(widths = c(3, 2, 2))
+RecallRTFigure
+
+# figure before review
 RecallRTFigure <- (EncodingRecallplot + RTTradeoff_plot) +
   plot_annotation(tag_levels = list(c("A", "B")))+
   plot_layout(widths = c(3, 2))
 RecallRTFigure
 
 
-ggsave(here("Figures", "RecallRTFigure_new.pdf"), RecallRTFigure,  
+ggsave(here("Figures", "FigureA1_RecallRT.pdf"), RecallRTFigure,  
        width = 10, 
-       height = 4)
+       height = 8)
 
 #################################################################################
 # Model behavioural output evaluator and mutator
@@ -366,7 +405,7 @@ ModelofModelPlotMutator <- mcmc_plot(EffectsModelMutator, type = "areas", prob =
 ModelofModelPlotMutator
 
 
-ggsave(here("Figures", "ModelBehaviourSubs.pdf"), ModelofModelPlotMutator,  
+ggsave(here("Figures", "FigureB1_hypothesisMutator.pdf"), ModelofModelPlotMutator,  
        width = 6, 
        height = 4)
 

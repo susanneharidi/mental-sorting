@@ -35,7 +35,7 @@ d$subject_id <- factor(d$subject_id)
 # run hypo mutator on all data
 ################################################################
 
-bestHyperPs <- read.csv(here("Model", "FittedModelData", "hypoMutatorBestHyperPsIndLL.csv"))
+bestHyperPs <- read.csv(here("Model", "FittedModelData", "hypoMutatorBestHyperPsIndLL_afterBugFix05_23.csv"))
 
 ###########################################################
 # run this on one participant at a time
@@ -91,8 +91,8 @@ for (currentsubject in subjects){
 # save model to data dataframe for further analysis
 ###################################
 
-write_csv(ModelToData, here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL.csv"))
-ModelToData <- read.csv(here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL.csv"))
+write_csv(ModelToData, here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
+ModelToData <- read.csv(here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
 
 ############################################
 # plot the output of the model
@@ -279,7 +279,7 @@ EffectsModel <- brm(time ~ Structure + NoB + (Structure + NoB|participant),
                     chains = 2,
                     save_pars = save_pars(all = TRUE),
                     control = list(max_treedepth = 15, adapt_delta = 0.99),
-                    file = "hypoMutatorEmulatingRTresultsBucketSortIndHypoLL")
+                    file = "hypoMutatorEmulatingRTresultsBucketSortIndHypoLL_afterBugFix05_23.csv")
 summary(EffectsModel)
 # results 13.10.2022
 #                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS

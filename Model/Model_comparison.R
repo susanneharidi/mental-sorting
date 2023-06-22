@@ -51,8 +51,8 @@ seed <- 2022
 # Load model data
 #############################################
 
-dGenerator <- read.csv(here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL0_1.csv"))
-dMutator <- read.csv(here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL.csv"))
+dGenerator <- read.csv(here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
+dMutator <- read.csv(here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
 
 
 
@@ -64,20 +64,30 @@ dGeneratorModel <- (subset(dGenerator, realAccuracy == 1 & realRT <= RTCutoff))
 modelGenerator <- brm(realRT ~ time + (time |participant), 
                       data = dGeneratorModel,
                       iter = 6000,
+                      seed = seed, # added 12.05.2023
+                      family = exgaussian(), # added 12.05.2023
                       save_pars = save_pars(all = TRUE),
-                      file = "hypoGeneratorFinalrawRT_BucketSortIndHypoLL0_1")
+                      file = "hypoGeneratorFinalrawRT_BucketSortIndHypoLL_afterBugFix05_23")
 summary(modelGenerator)
 # results 28.10.2022 LL 0-1
 #            Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
 # Intercept     0.20      0.11    -0.01     0.41 1.00     1822     3319
 # time          0.57      0.02     0.52     0.61 1.01      778     1551
 
+# results 12.05.23 LL 0-1 after bug fix
+#            Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept     1.10      0.07     0.95     1.24 1.00     2634     4551
+# time          0.38      0.02     0.34     0.42 1.01      872     1908
+
+
 dMutatorModel <- (subset(dMutator, realAccuracy == 1 & realRT <= RTCutoff))
 modelMutator <- brm(realRT ~ time + (time |participant), 
                     data = dMutatorModel,
                     iter = 6000,
+                    seed = seed, # added 12.05.2023
+                    family = exgaussian(), # added 12.05.2023
                     save_pars = save_pars(all = TRUE),
-                    file = "hypoMutatorFinalrawRT_BucketSortIndHypoLL")
+                    file = "hypoMutatorFinalrawRT_BucketSortIndHypoLL_afterBugFix05_23")
 summary(modelMutator)
 # results 13.10.2022
 #            Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
@@ -88,6 +98,10 @@ summary(modelMutator)
 # Intercept     0.27      0.10     0.06     0.48 1.00     2028     3543
 # time          0.56      0.02     0.51     0.60 1.00      977     2194
 
+# results 12.05.23 LL 0-1 after bug fix
+#               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept     1.13      0.07     1.00     1.26 1.00     4132     7220
+# time          0.40      0.02     0.36     0.43 1.01     1030     2494
 
 
 lGenerator <- loo_R2(modelGenerator)[1]
@@ -104,6 +118,12 @@ dl
 # 1 0.6365322 Hypothesis Mutator
 # 2 0.6480957 Hypothesis Generator
 
+# results 12.05.23 LL 0-1 after bug fix
+
+# r2                 model
+# 1 0.5659963   1Hypothesis Mutator
+# 2 0.5906816 2Hypothesis Generator
+
 ############################################################
 # Calulate BFs for the models
 ############################################################
@@ -111,6 +131,9 @@ BFGeneratorMutator <- bayes_factor(modelGenerator, modelMutator)
 BFGeneratorMutator
 # Results 31.10.2022
 # BF = 1540457581781216155846866286620866082048484666.00000
+
+# results 12.05.23 LL 0-1 after bug fix
+# BF = 10589538106590291565604666866826620682288262248864040806.00000
 
 
 ###############################################################
@@ -121,13 +144,24 @@ BICMuator
 # Bic = 1969099.4
 # LL = -984540.9
 
+# results 12.05.23 LL 0-1 after bug fix
+# Bic = 1972804.6 
+# LL = -986393.5
+
 BICGenerator <- BIC(dGeneratorModel, d = 1)
 BICGenerator
 # Bic = 1959558.5 
 # LL = -979774.8
 
+# results 12.05.23 LL 0-1 after bug fix
+# Bic = 1957380.4 
+# LL = -978685.8
+
 BICDifference <- BICMuator[1] - BICGenerator[1]
 # 9540.963
+
+# results 12.05.23 LL 0-1 after bug fix
+# 15424.2
 
 #################################################################
 # add model predictions as regressor

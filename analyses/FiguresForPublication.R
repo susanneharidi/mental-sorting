@@ -27,6 +27,7 @@ library(RColorBrewer)
 library(corrplot)
 library(ggpubr)
 library(png)
+library(viridis)
 
 #########################################################################
 # functions
@@ -270,14 +271,57 @@ PlotRTGain <- ggarrange(plotStrucDiffSim + rremove("xlab"), plotStrucDiffRT,
                         legend = "top")
 PlotRTGain
 
+
+###############################
+# Assembling the figure 
+
 BehaviouralFigure <- pRawRT + Model_Plot + (plotStrucDiffSim / plotStrucDiffRT) + 
   plot_annotation(tag_levels = list(c("A", "B", "C")))
 BehaviouralFigure
 
 
-ggsave(here("Figures", "BehaviouralFigure.pdf"), BehaviouralFigure,  
+ggsave(here("Figures", "Figure2_BehaviouralFigure.pdf"), BehaviouralFigure,  
        width = 14, 
        height = 5)
+
+
+############################################
+# Reviever request RT over time figure -> this figure is in the subs
+###########################################
+
+dRT$trial = dRT$Trial_index - 35*(dRT$Block-1) 
+rtTrials = ddply(subset(dRT, Condition == "Sort"), ~trial + Structure, summarize, meanTime = mean(rt), se = se(rt))
+
+plotrtTrials <- ggplot(rtTrials, aes(x = trial, y = meanTime, fill = Structure, color = Structure)) +
+  geom_line(position = pd, size = 0.5) +
+  #points
+  geom_point(position = pd)+
+  geom_smooth(se=FALSE)+
+  #error bars
+  geom_errorbar(aes(ymin = meanTime-se, ymax = meanTime+se), width = 0, size = 1, position = pd)+
+  #change fill
+  scale_fill_manual(values = cbbPalette)+
+  #change color
+  scale_color_manual(values = cbbPalette)+
+  theme_minimal()+
+  xlab("Trial")+
+  #add ylab
+  ylab('Mean RT in s')+
+  #change fonts
+  theme(text = element_text(size = textsize, family = "sans"), legend.position = "top")+
+  facet_grid(cols = vars(Structure)) 
+#add title
+#ggtitle("Model Time over Trials")
+plotrtTrials
+
+Review_plot <- plotrtTrials
+plot_annotation(tag_levels = list(c("A", "B", "C")))
+Review_plot
+
+ggsave(here("Figures", "FigureE1_scaling.pdf"), Review_plot,  
+       width = 10, 
+       height = 5)
+
 
 ############################################################################
 # Scaling figure
@@ -548,15 +592,21 @@ EvidenceForLinearPlot <- ggplot(dfDiffDiffBF, aes(x = Structure, y = log10(BF), 
             scale_color_manual(values = cbbPalette)
 EvidenceForLinearPlot
 
+
+####################################################################
+# final scaling figure
+##############################################################
+
 # the BF plot needs to be added outside of R, since it is not a ggplot.
 # for now I use the plot_scalingWithin figure as a plce holder
 ScalingFigure <- (plot_scalingWithin + plot_scalingWithin) / (plot_scalingDiffWithin + EvidenceForLinearPlot)+ 
   plot_annotation(tag_levels = "A")
 ScalingFigure 
 
-ggsave(here("Figures", "ScalingFigure_dot.png"), ScalingFigure,  
+ggsave(here("Figures", "Figure3_Scaling.png"), ScalingFigure,  
        width = 9, 
        height = 7)
+# this figure still needs the B) changed to the BF plot, which I do in powerpoint
 
 ######################################################################################
 # The Model comparison figure is generated in the Model_Comparison script
@@ -579,7 +629,7 @@ rt_cutoff = 10
 #######################################################################################
 # gtw thw data where the sorter was run on all data with the best hyper-parameters for each participant
 #######################################################################################
-ModelToData <- read.csv(here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL0_1.csv"))
+ModelToData <- read.csv(here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
 
 #######################################################################################
 # plot all thresholds
@@ -637,7 +687,7 @@ plotFinalConnections <- ggplot(subset(allfinalHypo, trial == 35) , aes(x = corre
   scale_fill_manual(values = cbbPalette)+
   #change color
   scale_color_manual(values = cbbPalette)+
-  scale_x_discrete(guide = guide_axis(n.dodge = 2), labels = c("3 correct", " 2 correct", "no Connections"))+
+  scale_x_discrete(labels = c("3 correct", " 2 correct", "none"))+ #guide = guide_axis(n.dodge = 2), 
   #add xlab
   xlab("Connections")+
   #add ylab
@@ -720,7 +770,7 @@ ModelvsDataPlot <- ggplot(modelData, aes(x = time, y = rawRt, color = Structure)
   theme(legend.position = "None")+
   geom_smooth(data = modelData, aes(x = time, y = rawRt), method = lm)+
   theme_minimal()+
-  scale_x_continuous(breaks = c(0, 100, 200))+
+  #scale_x_continuous(breaks = c(0, 100, 200))+
   #change fill
   scale_fill_manual(values = cbbPalette)+
   #change color
@@ -742,7 +792,7 @@ EffectsModel <- brm(time ~ Structure + NoB + (Structure + NoB|participant),
                     chains = 2,
                     save_pars = save_pars(all = TRUE),
                     control = list(max_treedepth = 15, adapt_delta = 0.99),
-                    file = "hypoGeneratorEmulatingRTresultsBucketSortIndLRLL0_1")
+                    file = "hypoGeneratorEmulatingRTresultsBucketSortIndLRLL_afterBugFix05_23") # old hypoGeneratorEmulatingRTresultsBucketSortIndLRLL0_1
 
 ModelofModelPlot <- mcmc_plot(EffectsModel, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
   geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
@@ -758,6 +808,8 @@ ModelOutputPlot <- (plotNoB + ModelofModelPlot + plotrtTrials)/(plotFinalThresho
   plot_layout(guides = 'collect')
 ModelOutputPlot
 
-ggsave(here("Figures", "ModelOutputFigure0_1.pdf"), ModelOutputPlot,  
+ggsave(here("Figures", "Figure5_ModelOutput.pdf"), ModelOutputPlot,  
        width = 14, 
        height = 7)
+
+# last generated 22.06.23 after bug fix

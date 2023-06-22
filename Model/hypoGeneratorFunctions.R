@@ -258,11 +258,11 @@ noisy_sort <- function(trial, threshold = 7, connections = 'a'){
   # number of to-be-sorted rectangles
   nr <- nrow(trial)
   # go through the trials to determine the shortest bar
-  MinSize = trial$size[1]
+  MinSize = as.numeric(trial$size[1])
   smallest = 1
   for (i in 1:nrow(trial)){
     # check if current rectangle is smaller than the current smallest rectangle
-    if (trial$size[i] < MinSize){
+    if (as.numeric(trial$size[i]) < MinSize){
       MinSize = trial$size[i]
       smallest = i
     }
@@ -282,11 +282,12 @@ noisy_sort <- function(trial, threshold = 7, connections = 'a'){
       connectNotFound = FALSE
       # increase the count accordingly
       count <- count + length(connections)-1
+      nr <- nr + length(connections)-1
     }
   }
   # the count has to be smaller than the threshold or total number of trials
   while (count < pmin(threshold, nr) & length(trial$size) > 0){
-    position  <- trial$size[1] # this is the relative size of the bar which allows it to be put in the correct bucket
+    position  <-  as.numeric(trial$size[1]) # this is the relative size of the bar which allows it to be put in the correct bucket
     collect[position] <- trial$bar[1]
     # bar gets removed from consideration set
     trial <- trial[-1,]
@@ -299,6 +300,7 @@ noisy_sort <- function(trial, threshold = 7, connections = 'a'){
         connectNotFound = FALSE
         # increase the count accordingly
         count <- count + length(connections)-1
+        nr <- nr + length(connections)-1
       }
     }
   }
@@ -314,7 +316,7 @@ noisy_sort <- function(trial, threshold = 7, connections = 'a'){
       if (mark == length(collect)){
         collect <- c(collect, connections[-1])
       }else{
-        for (connect in range(1, (length(connections)-1))){
+        for (connect in 1:(length(connections)-1)){
           if (is.nan(as.numeric(collect[(mark+connect)]))){
             collect[(mark+connect)] = connections[(connect+1)]
           } else {
@@ -374,12 +376,12 @@ noisy_sort_backwards <- function(trial, threshold = 7, connections = 'a'){
   # number of to-be-sorted rectangles
   nr <- nrow(trial)
   # go through the trials to determine the shortest bar
-  MaxSize = trial$size[1]
+  MaxSize = as.numeric(trial$size[1])
   tallest = 1
   for (i in 1:nrow(trial)){
     # check if current rectangle is smaller than the current tallest rectangle
-    if (trial$size[i] > MaxSize){
-      MaxSize = trial$size[i]
+    if (as.numeric(trial$size[i]) > MaxSize){
+      MaxSize = as.numeric(trial$size[i])
       tallest = i
     }
     # increment time
@@ -398,12 +400,21 @@ noisy_sort_backwards <- function(trial, threshold = 7, connections = 'a'){
       connectNotFound = FALSE
       # increase the count accordingly
       count <- count + length(connections)-1
+      nr <- nr + length(connections)-1
     }
   }
+  print("the sorting begins")
   # the count has to be smaller than the threshold or total number of trials
   while (count < pmin(threshold, nr) & length(trial$size) > 0){
-    position  <- trial$size[1] # this is the relative size of the bar which allows it to be put in the correct bucket
+    print("sorting bar")
+    print(count)
+    print(trial[1,])
+    position  <- as.numeric(trial$size[1]) # this is the relative size of the bar which allows it to be put in the correct bucket
     collect[position] <- trial$bar[1]
+    print("position")
+    print(position)
+    print("Sequence so far")
+    print(collect)
     # bar gets removed from consideration set
     trial <- trial[-1,]
     # count increments
@@ -415,6 +426,7 @@ noisy_sort_backwards <- function(trial, threshold = 7, connections = 'a'){
         connectNotFound = FALSE
         # increase the count accordingly
         count <- count + length(connections)-1
+        nr <- nr + length(connections)-1
       }
     }
   }
@@ -430,7 +442,7 @@ noisy_sort_backwards <- function(trial, threshold = 7, connections = 'a'){
       if (mark == length(collect)){
         collect <- c(collect, connections[-1])
       }else{
-        for (connect in range(1, (length(connections)-1))){
+        for (connect in 1:(length(connections)-1)){
           if (is.nan(as.numeric(collect[(mark+connect)]))){
             collect[(mark+connect)] = connections[(connect+1)]
           } else {
@@ -614,7 +626,9 @@ runSimulation = function(start_particle, # the current particle
                                run = as.numeric())
 
   # for 20 simulations in total
+  beginLR = learningrate
   for (n_runs in 1:total_runs){
+    
     print("started run:")
     print(n_runs)
     # generate a trial
@@ -643,6 +657,9 @@ runSimulation = function(start_particle, # the current particle
     
     # go through 50 trials
     for (i in 1:trials){
+      print("!!!!!!!!!!!!!!!!!!!!trial number:")
+      print(i)
+      
       # generate new trial
       if(structure_query){
         trial = generatetrial(structure_query = TRUE)
@@ -677,11 +694,12 @@ runSimulation = function(start_particle, # the current particle
                                     correct = dout$correct,
                                     nOfBars = 7, 
                                     nOfMaxConnections = 3, 
-                                    threshold = TRUE, 
+                                    threshold = TRUE, #TODO: this should be true but can be set to false for debugging
                                     connectedness = TRUE,
                                     startAtSmall = TRUE)
       }
-     
+      print("trial:")
+      print(trial)
       print("sorted sequence:")
       print(dout$sortedSequence)
       print("updated hypotheses")

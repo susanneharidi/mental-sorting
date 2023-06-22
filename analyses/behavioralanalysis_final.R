@@ -176,7 +176,7 @@ pResiduals
 
 
 ###################################################################
-# Full encoding RT model With Interactions Exgaussian
+# Full encoding RT model With Interactions 
 ###################################################################
 
 #create data set as before
@@ -259,6 +259,7 @@ pResiduals <- ggplot(dRTSummary, aes(x = Number_of_Bars, y = mu, col = Structure
 
 #show!
 pResiduals
+
 
 ###################################################################
 # Checking the effect of Block Number for encoding RT
@@ -418,9 +419,10 @@ bayes_factor(mrtallStructCondition, mrtnoCondition)
 ###################################################################
 # Full RT Model with RT Type as interaction
 ###################################################################
+d2 <- read.csv(here("Data", "Experiment", "data_to_work_with2.csv"))
 
 #create data set as before
-dp <- subset(d, rt <= rt_cutoff & correct == 1 & otherRT <= rt_cutoff)
+dp <- subset(d2, rt <= rt_cutoff & correct == 1 & otherRT <= rt_cutoff)
 
 # The full Encoding RT model 
 mrtallStructConditionRecallInteraction <- brm(rt ~ (Number_of_Bars + Structure + Condition) * Stimulus_type + ((Number_of_Bars + Structure + Condition + Block)*Stimulus_type|subject_id), 
@@ -467,6 +469,54 @@ tab_model(mrtallStructConditionRecallInteraction)
 # ConditionSort:Stimulus_typequery        -0.11      0.04    -0.19    -0.03 1.00     6221    10252
 
 
+###################################################################
+# Summed RT Model
+###################################################################
+
+#create data set as before
+dp <- subset(d2, rt <= rt_cutoff & correct == 1 & otherRT <= rt_cutoff & Stimulus_type == "bars")
+dp$summedRT <- dp$rt + dp$otherRT
+
+# The full Encoding RT model 
+mrtSummedallStructConditionNotLogFinalEx <- brm(summedRT ~ Number_of_Bars + Structure + Condition + (Number_of_Bars + Structure + Condition + Block|subject_id), 
+                                              data = dp,
+                                              iter = 10000,
+                                              cores = 4,
+                                              save_pars = save_pars(all = TRUE),
+                                              seed = seed,
+                                              control = list(max_treedepth = 15, adapt_delta = 0.99),
+                                              family = exgaussian(),
+                                              file = "mrtSummedallStructConditionNotLogFinalExControl")
+# Model summary
+summary(mrtSummedallStructConditionNotLogFinalEx)
+# Check for convergence
+mcmc_plot(mrtSummedallStructConditionNotLogFinalEx, type = "trace")
+# Plot effects 
+mcmc_plot(mrtSummedallStructConditionNotLogFinalEx, type = "intervals", prob = 0.95)
+# only plot main populationlevel effects
+mcmc_plot(mrtSummedallStructConditionNotLogFinalEx, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
+  xlab("RT in s")+
+  theme_minimal()+
+  theme(text = element_text(size = 20, family = "sans"))+
+  scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", "Sequence Structure", "Sort Task"))+# 
+  ggtitle("Ecoding vs. Recall RT analysis")
+pp_check(mrtSummedallStructConditionNotLogFinalEx, type = "ecdf_overlay")
+#visualize all effects
+plot(conditional_effects(mrtSummedallStructConditionNotLogFinalEx), points = FALSE)
+tab_model(mrtSummedallStructConditionNotLogFinalEx)
+
+
+# Results Exgaussian 16.03.2023 
+#                      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept             0.75      0.13     0.51     1.01 1.00     2649     4793
+# Number_of_Bars        0.99      0.05     0.88     1.10 1.00     1043     2243
+# StructureQuery       -0.42      0.12    -0.66    -0.18 1.00     2474     4728
+# StructureSequence    -0.22      0.05    -0.33    -0.12 1.00     4120     9611
+# ConditionSort         0.44      0.08     0.29     0.59 1.00     3860     7749
+
+
+
 ##################################################################################
 # the following model does not converge!!!
 ###################################################################
@@ -474,7 +524,7 @@ tab_model(mrtallStructConditionRecallInteraction)
 ###################################################################
 
 #create data set as before
-dp <- subset(d, rt <= rt_cutoff & correct == 1 & otherRT <= rt_cutoff)
+dp <- subset(d2, rt <= rt_cutoff & correct == 1 & otherRT <= rt_cutoff)
 
 # The full Encoding RT model 
 mrtallRecallSeqLenInteraction <- brm(rt ~ Number_of_Bars * Stimulus_type * (Structure + Condition) +
@@ -547,3 +597,97 @@ tab_model(mrtallRecallSeqLenInteraction)
 # Running the chains for more iterations may help. See
 # https://mc-stan.org/misc/warnings.html#tail-ess 
 
+###################################################################
+# Full encoding RT model with recall RT as a predictor
+###################################################################
+
+#create data set as before
+dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
+
+# The full Encoding RT model 
+mrtallStructConditionPlusRecallRT <- brm(rt ~ Number_of_Bars + Structure + Condition + queryRT+ (Number_of_Bars + Structure + Condition + Block + queryRT|subject_id), 
+                             data = dp,
+                             iter = 10000,
+                             cores = 4,
+                             save_pars = save_pars(all = TRUE),
+                             seed = seed,
+                             family = exgaussian(),
+                             file = "mrtallStructConditionPlusRecallRTNotLogFinalEx")
+# Model summary
+summary(mrtallStructConditionPlusRecallRT)
+# Check for convergence
+mcmc_plot(mrtallStructConditionPlusRecallRT, type = "trace")
+# Plot effects 
+mcmc_plot(mrtallStructConditionPlusRecallRT, type = "intervals", prob = 0.95)
+# only plot main populationlevel effects
+mcmc_plot(mrtallStructConditionPlusRecallRT, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
+  xlab("RT in s")+
+  theme_minimal()+
+  theme(text = element_text(size = 20, family = "sans"))+
+  scale_y_discrete(labels = c("Intercept", "Sequence Length", "Query Structure", "Sequence Structure", "Sort Task"))+# 
+  ggtitle("Raw RT analysis")
+pp_check(mrtallStructConditionPlusRecallRT, type = "ecdf_overlay")
+#visualize all effects
+plot(conditional_effects(mrtallStructConditionPlusRecallRT), points = FALSE)
+tab_model(mrtallStructConditionPlusRecallRT, transform = NULL)
+
+# Results 23.03.2023
+#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept             0.55      0.11     0.34     0.77 1.00     2168     4154
+# Number_of_Bars        0.58      0.04     0.50     0.66 1.00     1383     3134
+# StructureQuery       -0.19      0.05    -0.29    -0.08 1.00     2985     6580
+# StructureSequence    -0.17      0.04    -0.24    -0.09 1.00     2831     8094
+# ConditionSort         0.22      0.04     0.14     0.30 1.00     4125     8110
+# queryRT               0.29      0.04     0.21     0.36 1.00     5462     9239
+
+
+
+###################################################################
+# Full encoding RT with exponential term model reply to reviewer 1
+###################################################################
+
+#create data set as before
+dp <- subset(d, rt <= rt_cutoff & correct == 1 & queryRT <= rt_cutoff)
+dp$NoBsquared <- dp$Number_of_Bars**2
+
+# The full Encoding RT model 
+mrtallStructConditionWithQuadraticTerm <- brm(rt ~ Number_of_Bars + NoBsquared + Structure + Condition + (Number_of_Bars + NoBsquared + Structure + Condition + Block|subject_id), 
+                             data = dp,
+                             iter = 10000,
+                             cores = 4,
+                             save_pars = save_pars(all = TRUE),
+                             seed = seed,
+                             family = exgaussian(),
+                             file = "mrtallStructConditionNotLogFinalExWithQuadraticTerm")
+# Model summary
+summary(mrtallStructConditionWithQuadraticTerm)
+# Check for convergence
+mcmc_plot(mrtallStructConditionWithQuadraticTerm, type = "trace")
+# Plot effects 
+mcmc_plot(mrtallStructConditionWithQuadraticTerm, type = "intervals", prob = 0.95)
+# only plot main populationlevel effects
+mcmc_plot(mrtallStructConditionWithQuadraticTerm, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
+  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
+  xlab("RT in s")+
+  theme_minimal()+
+  theme(text = element_text(size = 20, family = "sans"))+
+  scale_y_discrete(labels = c("Intercept", "Sequence Length", "Sequence Length^2","Query Structure", "Sequence Structure", "Sort Task"))+# 
+  ggtitle("Raw RT analysis")
+pp_check(mrtallStructConditionWithQuadraticTerm, type = "ecdf_overlay")
+#visualize all effects
+plot(conditional_effects(mrtallStructConditionWithQuadraticTerm), points = FALSE)
+tab_model(mrtallStructConditionWithQuadraticTerm, transform = NULL)
+
+
+# results exgaussian  29.03.2023
+#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept             0.81      0.08     0.65     0.98 1.00     2418     4762
+# Number_of_Bars        0.47      0.09     0.29     0.65 1.00     1331     2754
+# NoBsquared            0.03      0.01     0.00     0.06 1.00     1309     2526
+# StructureQuery       -0.26      0.08    -0.41    -0.11 1.00     2782     5510
+# StructureSequence    -0.18      0.04    -0.26    -0.09 1.00     3826     8019
+# ConditionSort         0.27      0.05     0.17     0.36 1.00     4524     8188
+
+# BF with not quadratic model
+bayes_factor(mrtallStructConditionWithQuadraticTerm, mrtallStructCondition)

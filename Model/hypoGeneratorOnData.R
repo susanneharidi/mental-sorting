@@ -42,19 +42,33 @@ start_particle = generateStartParticles(nOfBars = 7, nOfColors = 10)
 ###############################
 # run sorter on all data with the best LRs
 ###############################
-bestLRs <- read.csv(here("Model", "FittedModelData", "hypoGeneratorBestHyperPsIndLL0_1.csv"))
+bestLRs <- read.csv(here("Model", "FittedModelData", "hypoGeneratorBestHyperPsIndLL_afterBugFix05_23.csv"))
+
 
 source(here("Model", "hypoGeneratorFunctionsIndLR.R")) 
 ModelToData <- runHypoLearnerOnAllDataIndLR(start_particle = generateStartParticles(nOfBars = 7, nOfColors = 10),
                                             d,
                                             bestLRs)
 
+## add the LR to the dataframe
+participants = unique(ModelToData$participant)
+for (i in 1:length(participants)){
+  currentData = subset(ModelToData, participant == participants[i])
+  currentData$LR = subset(bestLRs, subject == participants[i])$LR
+  if (i == 1){
+    ModelToDataWithLR = currentData
+  }else{
+    ModelToDataWithLR = rbind(ModelToDataWithLR, currentData)
+  }
+}
+
 #################################
 # save model to data dataframe for further analysis
 ###################################
 
-write_csv(ModelToData, here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL0_1.csv"))
-ModelToData <- read.csv(here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL0_1.csv"))
+write_csv(ModelToData, here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
+                    # orignal data for first submission "hypoGeneratorfitted_BucketSortIndHypoPsLL0_1.csv
+ModelToData <- read.csv(here("Model", "FittedModelData", "hypoGeneratorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
 
 ##################################################################
 # plots of model run on real data
@@ -86,6 +100,7 @@ plotFinalThresholds <- ggplot(subset(allfinalHypo, trial == 35) , aes(x = thresh
   ggtitle("Final Thresholds")
 
 print(plotFinalThresholds)
+
 
 thresholdsTime = ddply(allfinalHypo, ~trial + Structure , summarize, meanthreshold = mean(threshold), se = se(threshold))
 plotThresholdsoverTime <- ggplot(thresholdsTime, aes(y = meanthreshold, x = trial , fill = Structure, color = Structure)) +
@@ -299,7 +314,8 @@ EffectsModel <- brm(time ~ Structure + NoB + (Structure + NoB|participant),
                     chains = 2,
                     save_pars = save_pars(all = TRUE),
                     control = list(max_treedepth = 15, adapt_delta = 0.99),
-                    file = "hypoGeneratorEmulatingRTresultsBucketSortIndLRLL0_1")
+                    file = "hypoGeneratorEmulatingRTresultsBucketSortIndLRLL_afterBugFix05_23")
+                    # old: hypoGeneratorEmulatingRTresultsBucketSortIndLRLL0_1
 summary(EffectsModel)
 
 # results 14.10.2022 (LL)
@@ -308,6 +324,14 @@ summary(EffectsModel)
 # StructureQuery       -0.51      0.03    -0.56    -0.46 1.00     2861     1365
 # StructureSequence    -0.27      0.05    -0.37    -0.17 1.00     1129     1315
 # NoB                   1.52      0.01     1.50     1.54 1.00     1136     1380
+
+# results 11.05.2023 (LL) after bug fix
+#                   Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept            -0.12      0.06    -0.24    -0.00 1.00      172      592
+# StructureQuery       -0.35      0.03    -0.41    -0.28 1.00      394      918
+# StructureSequence    -0.32      0.06    -0.44    -0.20 1.00      273      658
+# NoB                   1.65      0.02     1.60     1.69 1.00      155      349
+
 
 
 ModelofModelPlot <- mcmc_plot(EffectsModel, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+

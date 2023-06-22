@@ -48,7 +48,7 @@ pd <- position_dodge(.2)
 cbbPalette <- c("grey50","#0072B2", "#D55E00")
 
 #standard error
-se<-function(x){sd(x)/sqrt(length(x))}
+se <- function(x){sd(x)/sqrt(length(x))}
 
 
 #########################################################################
@@ -139,7 +139,7 @@ plotAccuracyVStime <- ggplot(AccuracyRTRandomEffects, aes(x = RTEstimate, y = Ac
 
 plotAccuracyVStime
 
-ggsave(here("Figures", "AccurcayTimeTradeOffFigure.pdf"), plotAccuracyVStime,  
+ggsave(here("Figures", "FigureC2AccurcayTimeTradeOff.pdf"), plotAccuracyVStime,  
        width = 10, 
        height = 10)
 
@@ -151,3 +151,4 @@ data <- subset(d, rt <= cutoff & Condition == "Sort" & queryRT <= cutoff)
 accuracyLogistic <- glm(correct ~ Number_of_Bars + rt + Structure + (Number_of_Bars + rt + Structure|subject_id),
                         family = binomial(link='logit'),
                         data = data)
+

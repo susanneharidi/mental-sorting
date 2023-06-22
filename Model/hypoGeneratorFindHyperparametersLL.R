@@ -129,6 +129,6 @@ ggplot(bestLRs, aes(x = LR)) +
 ggplot(bestLRs, aes(x = minLL, y = LR)) + 
   geom_point()
 
-write_csv(bestLRs, here("Model", "FittedModelData", "hypoGeneratorBestHyperPsIndLL0_1.csv"))
-bestLRs <- read.csv(here("Model", "FittedModelData", "hypoGeneratorBestHyperPsIndLL0_1.csv"))
+write_csv(bestLRs, here("Model", "FittedModelData", "hypoGeneratorBestHyperPsIndLL_afterBugFix05_23.csv"))
+bestLRs <- read.csv(here("Model", "FittedModelData", "hypoGeneratorBestHyperPsIndLL_afterBugFix05_23.csv"))
 
