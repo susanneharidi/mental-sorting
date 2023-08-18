@@ -403,7 +403,7 @@ generateRandomParticles= function(nOfParticles,
     }else{
       newstartAtSmall = 1
     }
-    particles=rbind(particles, data.frame(threshold = newthreshold,
+    particles = rbind(particles, data.frame(threshold = newthreshold,
                                           connections = connection,
                                           startAtSmall = newstartAtSmall))
   }
@@ -505,170 +505,7 @@ mutateParticle = function(particle,
   return(particle)
 }
 
-###########################
-# function to run the simulation
-############################
-runSimulation = function(nStartParticles, # generated particles
-                         total_runs, # int
-                         trials, # int
-                         particles_to_mutate, # int, number of particles that get mutated each trial
-                         structure_query = FALSE, 
-                         structure_task = FALSE){
-  
-  
-  # matrix to collect run time
-  times = matrix(0, trials, total_runs)
-  accuracy = matrix(0, trials, total_runs)
-  NoB = matrix(0, trials, total_runs) # Number of Bars
-  finalHypotheses = data.frame(threshold = as.numeric(),
-                               conncetions = as.character(),
-                               startAtSmall = as.integer(),
-                               time = as.numeric(),
-                               run = as.numeric())
-  # determine the number of hypotheses 
-  nhypotheses = nStartParticles
-  #print("number of hypotheses")
-  #print(nhypotheses)
-  # for 20 simulations in total
-  for (n_runs in 1:total_runs){
-    # generate nStartParticles random start particles
-    start_particles = generateRandomParticles(nOfParticles = nStartParticles, 
-                                              nOfBars = 7, 
-                                              nOfMaxConnections = 3, 
-                                              threshold = TRUE, 
-                                              connectedness = TRUE,
-                                              startAtSmall = TRUE)
-    
-    #print("started run:")
-    #print(n_runs)
-    # generate a trial
-    if(structure_query){
-      trial = generatetrial(structure_query = TRUE)
-    }else if(structure_task){
-      trial = generatetrial(structure_task = TRUE)
-    }else{
-      trial = generatetrial()
-    }
-    
-    #print("current trial")
-    #print(trial)
-    
-    # create an out file
-    # bind the output lists into data frame
-    dout <- do.call(rbind, 
-                    # apply trial to each program defined by the particles
-                    apply(start_particles, 1, function(x) {execute(trial = trial, threshold = x[1], connect=x[2], startAtSmall = x[3])})
-    )
-    # bind them together
-    hypotheses <- cbind(start_particles, dout)
-    
-    # go through 50 trials
-    for (i in 1:trials){
-      #print("trial no:")
-      #print(i)
-      #print("hypotheses before selection")
-      #print(hypotheses)
-      # generate new trial
-      # generate a trial
-      if(structure_query){
-        trial = generatetrial(structure_query = TRUE)
-      }else if(structure_task){
-        trial = generatetrial(structure_task = TRUE)
-      }else{
-        trial = generatetrial()
-      }
-      
-      NoB[i,n_runs] <- length(trial$bar)
-      
-      #print("current trial")
-      #print(trial)
-      #print("hypotheses[,1:3]")
-      #print(hypotheses[,1:3])
-      
-      # collect results of all programs
-      dout <- do.call(rbind, apply(hypotheses[,1:3], 1, function(x) {execute(trial = trial, threshold = x[1], connect = x[2], startAtSmall = x[3])}))
-      #print("dout")
-      #print(dout)
-      # update time so that each hypotheses time reflects the average time
-      hypotheses$time <- hypotheses$time*((i-1)/i) + (1/i)*dout$time
-      # update accuracy
-      hypotheses$correct <- dout$correct
-      # only keep correct hypotheses
-      hypotheses = subset(hypotheses, correct == 1)
-      # see how many hypotheses are left
-      remaining = length(hypotheses$correct)
-      #print("hypotheses after selection")
-      #print(hypotheses)
-      #print("remaining")
-      #print(remaining)
-      
-      # if all hypothese were wrong, generate entirely new ones
-      if (remaining == 0){
-        hypotheses = generateRandomParticles(nOfParticles = nhypotheses, 
-                                             nOfBars= 7, 
-                                             nOfMaxConnections = 3, 
-                                             threshold = TRUE, 
-                                             connectedness = TRUE,
-                                             startAtSmall = TRUE)
-        hypotheses <- cbind(hypotheses, dout)
-        hypotheses$time = 0
-        
-      }else{
-        # check if we can mutate as many particles as we wanted, and if not, update the number
-        to_mutate = max(particles_to_mutate, nhypotheses-remaining)
-        
-        # remove the worst hypotheses and create the mutants
-        mutants = data.frame(threshold = as.numeric(),
-                             conncetions = as.character(),
-                             startAtSmall = as.integer(),
-                             time = as.numeric())
-        for (ithBest in 1:to_mutate){
-          # get the ith best hypothesis
-          if (ithBest > remaining){
-            # if there are to few hypotheses always mutate the best
-            best = subset(hypotheses, time == sort(hypotheses$time)[1])[1,]
-          }else{
-            best = subset(hypotheses, time == sort(hypotheses$time)[ithBest])[1,]
-          }
-          #print("hypotheses to muatate")
-          #print(best)
-          # mutate that hypothesis
-          mutant = mutateParticle(best, startAtSmall = FALSE)
-          #print("mutated hypotheses")
-          #print(mutant)
-          mutants = rbind(mutants, mutant)
-          
-          
-          # remove the worst hypothesis, but only of there are to many hypotheses
-          if(length(mutants$time)+remaining > nhypotheses){
-            hypotheses = hypotheses[-which.max(hypotheses$time),]
-          }
-        }
-        # remove the rank from the hopotheses and add the mutants
-        hypotheses = rbind(hypotheses, mutants)
-      }
-      # track max time
-      times[i, n_runs] <- max(dout$time)
-      # track mean accuracy
-      accuracy[i,n_runs] <- mean(dout$correct)
-      
-      
-    }
-    #print("run:")
-    #print(n_runs)
-    #print("final hypothese")
-    #print(hypotheses)
-    dummy = hypotheses
-    dummy$run = n_runs
-    finalHypotheses = rbind(finalHypotheses, dummy)
-  }
-  output <- list()
-  output[[1]] <- times
-  output[[2]] <- accuracy
-  output[[3]] <- finalHypotheses
-  output[[4]] <- NoB
-  return(output)
-}
+
 
 #################################################################################
 # function to run model on participant data. 
@@ -681,7 +518,7 @@ runSimulation = function(nStartParticles, # generated particles
 
 runHypoMutateOnData = function(start_particles, # generated particles
                                data, 
-                               particles_to_mutate, # int, number of particles that get mutated each trial
+                               Nr_of_mutations, # int, number of mutations of the particle at each trial
                                mutate_threshold = TRUE,
                                mutate_connection = TRUE,
                                mutate_direction = TRUE
@@ -748,87 +585,59 @@ runHypoMutateOnData = function(start_particles, # generated particles
       #print(trial)
       #print("hypotheses[,1:3]")
       #print(hypotheses[,1:3])
-      
-      # collect results of all programs
-      dout <- do.call(rbind, apply(hypotheses[,1:3], 1, function(x) {execute(trial = trial, threshold = x[1], connect = x[2], startAtSmall = x[3])}))
-      #print("dout")
-      #print(dout)
-      # update time so that each hypotheses time reflects the average time
-      hypotheses$time <- hypotheses$time*((i-1)/i) + (1/i)*dout$time
-      # update accuracy
-      hypotheses$correct <- dout$correct
-      # only keep correct hypotheses
-      hypotheses = subset(hypotheses, correct == 1)
-      # see how many hypotheses are left
-      remaining = length(hypotheses$correct)
-      #print("hypotheses after selection")
-      #print(hypotheses)
-      #print("remaining")
-      #print(remaining)
-      
-      # if all hypothese were wrong, generate entirely new ones
-      if (remaining == 0){
-        hypotheses = generateRandomParticles(nOfParticles = nhypotheses, 
-                                             nOfBars = 7, 
-                                             nOfMaxConnections = 3, 
-                                             threshold = mutate_threshold, 
-                                             connectedness = mutate_connection,
-                                             startAtSmall = mutate_direction)
-        hypotheses <- cbind(hypotheses, dout)
-        hypotheses$time = 0
-        #print("had to replace all hypotheses, new hypotheses:")
-        #print(hypotheses)
+      currentTime = 99999
+      currentAccuracy = 0
+      for (mut in 1:Nr_of_mutations){
+        #print("Mutation NO:")
+        #print(mut)
+        # collect results of all programs
+        dout <- do.call(rbind, apply(hypotheses[,1:3], 1, function(x) {execute(trial = trial, threshold = x[1], connect = x[2], startAtSmall = x[3])}))
+        if (mut == 1){
+          currentTime = dout$time
+          currentAccuracy = dout$correct
+        }
+        #print("dout")
+        #print(dout)
+        # update time so that each hypotheses time reflects the average time
+        hypotheses$time <- dout$time
+        # update accuracy
+        hypotheses$correct <- dout$correct
+        # set a hypothesis score
+        hypothesis_score = dout$correct*100 + 1/hypotheses$time
         
-      }else{
-        # check if we can mutate as many particles as we wanted, and if not, update the number
-        to_mutate = max(particles_to_mutate, nhypotheses-remaining)
-        #print("to mutate:")
-        #print(to_mutate)
+        # mutate that hypothesis
+        mutant = mutateParticle(hypotheses, 
+                                threshold = mutate_threshold, 
+                                connectedness = mutate_connection,
+                                startAtSmall = TRUE)
         
-        # remove the worst hypothese and create the mutants
-        mutants = data.frame(threshold = as.numeric(),
-                             conncetions = as.character(),
-                             startAtSmall = as.integer(),
-                             time = as.numeric())
-        for (ithBest in 1:to_mutate){
-          # get the ith best hypothesis
-          if (ithBest > remaining | ithBest > 3){
-            # if there are to few hypotheses always mutate the best
-            # same, if its not in the best three
-            best = subset(hypotheses, time == sort(hypotheses$time)[1])[1,]
-          }else{
-            best = subset(hypotheses, time == sort(hypotheses$time)[ithBest])[1,]
-          }
-          #print("hypotheses to muatate")
-          #print(best)
-          # mutate that hypothesis
-          mutant = mutateParticle(best, 
-                                  threshold = mutate_threshold, 
-                                  connectedness = mutate_connection,
-                                  startAtSmall = FALSE)
-          #print("mutated hypotheses")
+        mut_out <- do.call(rbind, apply(mutant[,1:3], 1, function(x) {execute(trial = trial, threshold = x[1], connect = x[2], startAtSmall = x[3])}))
+        mut_score <- mut_out$correct*100 + 1/mut_out$time
+        if(hypothesis_score < mut_score){
+          hypotheses = mutant
+          #print("mutant wins")
           #print(mutant)
-          mutants = rbind(mutants, mutant)
+          #print("Mutation NO:")
+          #print(mut)
+          #print("hypothesis score")
+          #print(hypothesis_score)
+          #print("mutant score")
+          #print(mut_score)
           
         }
-        # remove the worst hypotheses, but only of there are to many hypotheses
-        while(length(mutants$time) + remaining > nhypotheses){
-          remaining = remaining - 1
-          hypotheses = hypotheses[-which.max(hypotheses$time),]
-        }
-        # remove the rank from the hopotheses and add the mutants
-        hypotheses = rbind(hypotheses, mutants)
       }
+      
       # track max time
-      times[i, participant] <- max(dout$time)
+      times[i, participant] <- currentTime
       # track mean accuracy
-      accuracy[i,participant] <- mean(dout$correct)
+      accuracy[i,participant] <- currentAccuracy
       # track real RT
       realRTs[i, participant] <- current_trial$rt
       # track real accuracy
       realAccuracy[i, participant] <- current_trial$correct
       
-      #print("trial number") 
+      #print("trial number")
+      #print(i)
       
     }
     #print("run:")
@@ -855,11 +664,11 @@ runHypoMutateOnData = function(start_particles, # generated particles
 ##########################################################################
 
 runHypoMutateOnAllData <- function(start_particles,
-                                  AllData,
-                                  particles_to_mutate,
-                                  mutate_threshold = TRUE,
-                                  mutate_connection = TRUE,
-                                  mutate_direction = TRUE){
+                                   AllData,
+                                   Nr_of_mutations,
+                                   mutate_threshold = TRUE,
+                                   mutate_connection = TRUE,
+                                   mutate_direction = TRUE){
   
   ###########################################
   # query Structure
@@ -869,7 +678,7 @@ runHypoMutateOnAllData <- function(start_particles,
   
   QueryDataOutput <- runHypoMutateOnData(start_particles,
                                          data = dQuery, 
-                                         particles_to_mutate,
+                                         Nr_of_mutations,
                                          mutate_threshold = mutate_threshold,
                                          mutate_connection = mutate_connection,
                                          mutate_direction = mutate_direction) 
@@ -914,7 +723,7 @@ runHypoMutateOnAllData <- function(start_particles,
   
   SequenceDataOutput <- runHypoMutateOnData(start_particles,
                                             data = dSequence, 
-                                            particles_to_mutate,
+                                            Nr_of_mutations,
                                             mutate_threshold = mutate_threshold,
                                             mutate_connection = mutate_connection,
                                             mutate_direction = mutate_direction) 
@@ -948,7 +757,7 @@ runHypoMutateOnAllData <- function(start_particles,
   
   NoneDataOutput <- runHypoMutateOnData(start_particles,
                                         data = dNone, 
-                                        particles_to_mutate,
+                                        Nr_of_mutations,
                                         mutate_threshold = mutate_threshold,
                                         mutate_connection = mutate_connection,
                                         mutate_direction = mutate_direction) 
@@ -1028,3 +837,13 @@ datacolum_to_trial <- function(trialData){  # d[i,]
 
 #standard error
 se <- function(x){sd(x)/sqrt(length(x))}
+
+
+
+
+
+################################################################################
+# Lets try it out
+###################################################################################
+
+

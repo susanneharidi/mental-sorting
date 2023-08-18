@@ -47,12 +47,7 @@ ModelLLrealRT <- function(AllData, particles_to_mutate, particles){
   for (i in 1:length(ModelToData$timeasRT)){
     LL <- LL + dnorm(x = ModelToData$realRT[i], mean = ModelToData$timeasRT[i], sd = sd, log = TRUE)
   }
-  # plot = ggplot(ModelToData, aes(x = realRT, y = timeasRT, color = Structure))+
-  #   geom_point()+
-  #   ylim(0,10)+
-  #   xlim(0,10)+
-  #   ggtitle(paste(LL, particles_to_mutate, length(particles$threshold)))
-  # print(plot)
+
   return(-LL)
 }
 
@@ -65,17 +60,20 @@ d$subject_id <- factor(d$subject_id)
 
 RTCutoff = 10
 
-nStartParticles = c(5, 10, 15, 20) # 5, 10,
-particles_to_mutate = c(1, 2, 3, 4, 5) # 
-
+# extended hyper parameters with far larger number of start Particles for model in appendix
+nStartParticles = c(5, 10, 15, 20, 100, 1000, 10000)
+particles_to_mutate = c(1, 2, 3, 4, 5, 10, 50, 500, 750, 1000, 5000, 7500) #
 
 
 ##############################################################
 # run hypo mutator on all data
 ################################################################
 
-subjects <- unique(d$subject_id)
 
+# either load the dataframe with the LogLikelihood values
+LLdf <- read.csv(here("Model", "FittedModelData", "hypoMutator_hyperparameterfitting_LL_with_more_mutations.csv"))
+
+# or calculate the dataframe anew with the code below
 LLdf <- data.frame(subject  = character(),
                     nStartParticles = numeric(),
                     particles_to_mutate = numeric(),
@@ -125,6 +123,8 @@ ggplot(LLdf, aes(x = particles_to_mutate, y = LL, color = subject))+
   facet_grid(rows = vars(nStartParticles))+
   theme(legend.position = "none")
 
+#write_csv(LLdf, here("Model", "FittedModelData", "hypoMutator_hyperparameterfitting_LL_with_more_mutations.csv"))
+
 #########################################################
 # identify the hyperparameters with the minimal LL
 #-> I minimize here, because my LL function returns the negative LL
@@ -148,9 +148,9 @@ for(currentsubject in subjects){
 }
 
 
-ggplot(bestHyperPs, aes(x = nStartParticles, fill = as.factor(particles_to_mutate))) + 
+ggplot(bestHyperPs, aes(x = log(nStartParticles), fill = as.factor(particles_to_mutate))) + 
   geom_bar(position = "dodge2")+
   theme(legend.position = "top")
 
 
-write_csv(bestHyperPs, here("Model", "FittedModelData", "hypoMutatorBestHyperPsIndLL")) 
+write_csv(bestHyperPs, here("Model", "FittedModelData", "hypoMutatorBestHyperPsReview_with_more_mutations.csv")) 

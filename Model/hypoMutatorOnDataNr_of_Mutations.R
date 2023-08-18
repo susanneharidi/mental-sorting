@@ -1,4 +1,4 @@
-# run hypothesis mutator on the real trials
+# run hypothesis mutator version with one hypothesis (Appendix B) on the real trials
 # the output of this script is used for the model comparison
 
 
@@ -22,7 +22,7 @@ library(RColorBrewer)
 library(corrplot)
 library(png)
 
-source(here("Model", "hypoMutatorFunctions.R")) 
+source(here("Model", "hypoMutatorFunctionsReview_several_Mutations_per_Trial.R"))
 
 ##########################################################################
 #load the data and set some parameters
@@ -35,7 +35,7 @@ d$subject_id <- factor(d$subject_id)
 # run hypo mutator on all data
 ################################################################
 
-bestHyperPs <- read.csv(here("Model", "FittedModelData", "hypoMutatorBestHyperPsIndLL.csv"))
+bestHyperPs <- read.csv(here("Model", "FittedModelData", "hypoMutatorBestHyperPs_one_hypo_several_muts.csv"))
 
 ###########################################################
 # run this on one participant at a time
@@ -63,10 +63,12 @@ allfinalHypo <- data.frame(threshold = numeric(),
                            trueConnection = character())
 
 for (currentsubject in subjects){
+  print(currentsubject)
   currentHyperPs <- subset(bestHyperPs, subject == currentsubject)
-  nStartParticles <- currentHyperPs$nStartParticles
-  particles_to_mutate = currentHyperPs$particles_to_mutate
+  nStartParticles <- 1
+  nNr_of_mutations = currentHyperPs$Nr_of_mutations
   currtentData <- subset(d, subject_id == currentsubject)
+  print(nNr_of_mutations)
   
   particles = generateRandomParticles(nOfParticles = nStartParticles, 
                                       nOfBars = 7, 
@@ -75,13 +77,10 @@ for (currentsubject in subjects){
                                       connectedness = TRUE,
                                       startAtSmall = TRUE)
   
-  ##############################################################
-  # run hypo mutator on all data
-  ################################################################
   
   output <- runHypoMutateOnAllData(particles,
                                    currtentData,
-                                   particles_to_mutate)
+                                   nNr_of_mutations)
   
   ModelToData <- rbind(ModelToData, output[[1]])
   allfinalHypo <- rbind(allfinalHypo, output[[2]])
@@ -91,8 +90,10 @@ for (currentsubject in subjects){
 # save model to data dataframe for further analysis
 ###################################
 
-write_csv(ModelToData, here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
-ModelToData <- read.csv(here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
+#write_csv(ModelToData, here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL_Nr_of_mutations.csv"))
+ModelToData <- read.csv(here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL_Nr_of_mutations.csv"))
+
+
 
 ############################################
 # plot the output of the model
@@ -116,6 +117,7 @@ plotFinalThresholds <- ggplot(allfinalHypo , aes(x = threshold, fill = Structure
   #add ylab
   ylab('count')+
   #change fonts
+  xlim(1,7)+
   theme(text = element_text(size = 20, family = "sans"))+
   #add title
   ggtitle("Thresholds")
@@ -279,15 +281,21 @@ EffectsModel <- brm(time ~ Structure + NoB + (Structure + NoB|participant),
                     chains = 2,
                     save_pars = save_pars(all = TRUE),
                     control = list(max_treedepth = 15, adapt_delta = 0.99),
-                    file = "hypoMutatorEmulatingRTresultsBucketSortIndHypoLL_afterBugFix05_23.csv")
+                    file = "hypoMutatorEmulatingRTresultsBucketSortOneHypo_100_Muts_per_Trial.csv")
 summary(EffectsModel)
-# results 13.10.2022
-#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-# Intercept             0.12      0.05     0.02     0.22 1.00      864     1396
-# StructureQuery       -0.87      0.06    -0.99    -0.76 1.00      826      932
-# StructureSequence     0.08      0.04     0.01     0.16 1.00     1899     1555
-# NoB                   1.54      0.02     1.50     1.57 1.00      730     1092
+# results 02.08.2023 10 muts per trial
+#                    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept             0.25      0.04     0.17     0.33 1.00     1506     1748
+# StructureQuery       -0.14      0.04    -0.21    -0.06 1.00     1786     1691
+# StructureSequence    -0.14      0.06    -0.25    -0.03 1.00     1243     1294
+# NoB                   1.00      0.02     0.97     1.03 1.00     1059     1388
 
+# results 03.08.2023 100 muts per trial
+#                    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+# Intercept             0.41      0.03     0.34     0.47 1.00     1829     1600
+# StructureQuery       -0.11      0.03    -0.18    -0.05 1.00     2108     1478
+# StructureSequence    -0.71      0.05    -0.79    -0.62 1.00     1315     1499
+# NoB                   0.90      0.01     0.88     0.92 1.00     1341     1421
 
 ModelofModelPlot <- mcmc_plot(EffectsModel, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
   geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
@@ -301,3 +309,4 @@ ModelOutputPlot <- (plotNoB + ModelofModelPlot + plotrtTrials)/(plotFinalThresho
   plot_annotation(tag_levels = "A")+ 
   plot_layout(guides = 'collect')
 ModelOutputPlot
+

@@ -1,6 +1,5 @@
 # Finding good hyperparameters for the
-# hypothesis mutator
-# (via LooR^2 values)
+# hypothesis mutator chnaged version with only one hypothesis Appendix B
 
 ################################################################################
 # libraries
@@ -22,16 +21,16 @@ library(RColorBrewer)
 library(corrplot)
 library(png)
 
-source(here("Model", "hypoMutatorFunctions.R"))
+source(here("Model", "hypoMutatorFunctionsReview_several_Mutations_per_Trial.R"))
 
 set.seed(0)
 #################################################################
 # Functions
 ##################################################################
-ModelLLrealRT <- function(AllData, particles_to_mutate, particles){
-  output <- runHypoMutateOnAllData(particles,
+ModelLLrealRT <- function(AllData, Nr_of_mutations, particle){
+  output <- runHypoMutateOnAllData(particle,
                                    AllData,
-                                   particles_to_mutate)
+                                   Nr_of_mutations)
   #####################################
   # exlude all data where the participant was incorrect or th real RT is larger than 10/-10
   ############################################
@@ -47,12 +46,6 @@ ModelLLrealRT <- function(AllData, particles_to_mutate, particles){
   for (i in 1:length(ModelToData$timeasRT)){
     LL <- LL + dnorm(x = ModelToData$realRT[i], mean = ModelToData$timeasRT[i], sd = sd, log = TRUE)
   }
-  # plot = ggplot(ModelToData, aes(x = realRT, y = timeasRT, color = Structure))+
-  #   geom_point()+
-  #   ylim(0,10)+
-  #   xlim(0,10)+
-  #   ggtitle(paste(LL, particles_to_mutate, length(particles$threshold)))
-  # print(plot)
   return(-LL)
 }
 
@@ -65,20 +58,24 @@ d$subject_id <- factor(d$subject_id)
 
 RTCutoff = 10
 
-nStartParticles = c(5, 10, 15, 20) # 5, 10,
-particles_to_mutate = c(1, 2, 3, 4, 5) # 
-
+nStartParticles = 1
+possible_Nr_of_mutations = c(1, 5, 10, 100, 1000, 10000) 
 
 
 ##############################################################
 # run hypo mutator on all data
 ################################################################
 
+# load dataframe of LogLokelihoods 
+LLdf <- read.csv(here("Model", "FittedModelData", "hypoMutator_hyperparameterfitting_LL_one_hypo_several_muts.csv"))
+
+# or caculate it anew with the code below
+
 subjects <- unique(d$subject_id)
 
 LLdf <- data.frame(subject  = character(),
                     nStartParticles = numeric(),
-                    particles_to_mutate = numeric(),
+                    Nr_of_mutations = numeric(),
                     LL = numeric())
 
 
@@ -87,31 +84,31 @@ for (subject in subjects){
   print("subject:")
   print(subject)
   
-  for (i in 1:length(nStartParticles)){
-    particles = generateRandomParticles(nOfParticles = nStartParticles[i], 
-                                        nOfBars = 7, 
-                                        nOfMaxConnections = 3, 
-                                        threshold = TRUE, 
-                                        connectedness = TRUE,
-                                        startAtSmall = TRUE)
-    
-    current_particles_to_mutate <- particles_to_mutate[particles_to_mutate < nStartParticles[i]]
-    current_particles_to_mutate <- current_particles_to_mutate[current_particles_to_mutate > nStartParticles[i]/21]
-    LL <- c(1:length(current_particles_to_mutate))
-    for (l in 1:length(current_particles_to_mutate)){
-        allData <- subset(d, subject_id == subject)
-        LL[l] <- ModelLLrealRT(allData, min(current_particles_to_mutate[l], nStartParticles[i]), particles)
-        print(paste(LL[l], current_particles_to_mutate[l], nStartParticles[i]))
-    }
-    LLdfTemp <- data.frame(subject  = subject,
-                            nStartParticles = nStartParticles[i],
-                            particles_to_mutate = current_particles_to_mutate,
-                            LL = LL)
 
-    LLdf <- rbind(LLdf, LLdfTemp)
+  particle = generateRandomParticles(nOfParticles = nStartParticles, 
+                                      nOfBars = 7, 
+                                      nOfMaxConnections = 3, 
+                                      threshold = TRUE, 
+                                      connectedness = TRUE,
+                                      startAtSmall = TRUE)
+  
+  LL <- c(1:length(possible_Nr_of_mutations))
+  for (l in 1:length(possible_Nr_of_mutations)){
+      allData <- subset(d, subject_id == subject)
+      LL[l] <- ModelLLrealRT(allData, possible_Nr_of_mutations[l], particle)
+      print("current NR of Mutations")
+      print(possible_Nr_of_mutations[l])
   }
+  LLdfTemp <- data.frame(subject  = subject,
+                          nStartParticles = nStartParticles,
+                          Nr_of_mutations = possible_Nr_of_mutations,
+                          LL = LL)
+
+  LLdf <- rbind(LLdf, LLdfTemp)
+
   # plot partricipantwise results
-  ggplot(subset(LLdf, subject == subject), aes(x = particles_to_mutate, y = LL, color = nStartParticles))+
+  
+  ggplot(LLdf, aes(x = Nr_of_mutations, y = LL, color = subject))+
     geom_point()+
     geom_line()+
     ggtitle(subject)+
@@ -119,38 +116,38 @@ for (subject in subjects){
 }
 
 
-ggplot(LLdf, aes(x = particles_to_mutate, y = LL, color = subject))+
+ggplot(LLdf, aes(x = log(Nr_of_mutations), y = LL, color = subject))+
   geom_point()+
   geom_line()+
-  facet_grid(rows = vars(nStartParticles))+
+  theme_minimal()+
   theme(legend.position = "none")
+
+# write_csv(LLdf, here("Model", "FittedModelData", "hypoMutator_hyperparameterfitting_LL_one_hypo_several_muts.csv"))
 
 #########################################################
 # identify the hyperparameters with the minimal LL
 #-> I minimize here, because my LL function returns the negative LL
 ######################################################
-bestHyperPs <- data.frame(nStartParticles = numeric(),
-                          particles_to_mutate = numeric(),
+bestHyperPs <- data.frame(Nr_of_mutations = numeric(),
                           subject = character(),
                           minLL = numeric())
 
 for(currentsubject in subjects){
   data <- subset(LLdf, subject == currentsubject)
   minIndex <- which.min(data$LL)
-  nStartParticles <- data$nStartParticles[minIndex]
-  particles_to_mutate <- data$particles_to_mutate[minIndex]
+  nNr_of_mutations <- data$Nr_of_mutations[minIndex]
   minLL <- data$LL[minIndex]
-  bestHyperP <- data.frame(nStartParticles = nStartParticles,
-                            particles_to_mutate = particles_to_mutate,
+  bestHyperP <- data.frame(Nr_of_mutations = nNr_of_mutations,
                             subject = currentsubject,
                             minLL = minLL)
   bestHyperPs <- rbind(bestHyperPs, bestHyperP)
 }
 
 
-ggplot(bestHyperPs, aes(x = nStartParticles, fill = as.factor(particles_to_mutate))) + 
-  geom_bar(position = "dodge2")+
-  theme(legend.position = "top")
+ggplot(bestHyperPs, aes(x = log(Nr_of_mutations))) + 
+  geom_histogram()+
+  theme_minimal()
 
 
-write_csv(bestHyperPs, here("Model", "FittedModelData", "hypoMutatorBestHyperPsIndLL")) 
+write_csv(bestHyperPs, here("Model", "FittedModelData", "hypoMutatorBestHyperPs_one_hypo_several_muts.csv"))
+

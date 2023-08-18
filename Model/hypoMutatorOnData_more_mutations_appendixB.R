@@ -35,14 +35,20 @@ d$subject_id <- factor(d$subject_id)
 # run hypo mutator on all data
 ################################################################
 
-bestHyperPs <- read.csv(here("Model", "FittedModelData", "hypoMutatorBestHyperPsIndLL.csv"))
+# hyperparameters from 
+bestHyperPs <- read.csv(here("Model", "FittedModelData", "hypoMutatorBestHyperPsReview_with_more_mutations.csv"))
 
 ###########################################################
 # run this on one participant at a time
 ############################################################
 
-subjects <- unique(d$subject_id)
+#subjects <- unique(d$subject_id)
+subjects <- unique(bestHyperPs$subject)
 
+# load model to dataframe
+ModelToData <- read.csv(here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoMoreMutations.csv"))
+
+# or recreate it with the code from below
 
 ModelToData <- data.frame(NoB = numeric(),
                           time = numeric(),
@@ -62,11 +68,17 @@ allfinalHypo <- data.frame(threshold = numeric(),
                            Structure = character(),
                            trueConnection = character())
 
-for (currentsubject in subjects){
+number = 1
+for (currentsubject in subject){
+  print(currentsubject)
+  print(number)
+  number = number + 1
   currentHyperPs <- subset(bestHyperPs, subject == currentsubject)
   nStartParticles <- currentHyperPs$nStartParticles
   particles_to_mutate = currentHyperPs$particles_to_mutate
   currtentData <- subset(d, subject_id == currentsubject)
+  
+  print(currentHyperPs$nStartParticles)
   
   particles = generateRandomParticles(nOfParticles = nStartParticles, 
                                       nOfBars = 7, 
@@ -87,12 +99,16 @@ for (currentsubject in subjects){
   allfinalHypo <- rbind(allfinalHypo, output[[2]])
 }
 
+
+
+
+
+
 #################################
 # save model to data dataframe for further analysis
 ###################################
 
-write_csv(ModelToData, here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
-ModelToData <- read.csv(here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoPsLL_afterBugFix05_23.csv"))
+# write_csv(ModelToData, here("Model", "FittedModelData", "hypoMutatorfitted_BucketSortIndHypoMoreMutations.csv"))
 
 ############################################
 # plot the output of the model
@@ -270,34 +286,9 @@ ModelvsDataPlot <- ggplot(modelData, aes(x = time, y = realRT, color = Structure
 
 ModelvsDataPlot
 
-########################################################################
-# plotting the model that tries to emulate the effects of participant RT
-##########################################################################
-setwd(here("Model", "hypoFittingBrmModels"))
-EffectsModel <- brm(time ~ Structure + NoB + (Structure + NoB|participant),
-                    data = modelData,
-                    chains = 2,
-                    save_pars = save_pars(all = TRUE),
-                    control = list(max_treedepth = 15, adapt_delta = 0.99),
-                    file = "hypoMutatorEmulatingRTresultsBucketSortIndHypoLL_afterBugFix05_23.csv")
-summary(EffectsModel)
-# results 13.10.2022
-#                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-# Intercept             0.12      0.05     0.02     0.22 1.00      864     1396
-# StructureQuery       -0.87      0.06    -0.99    -0.76 1.00      826      932
-# StructureSequence     0.08      0.04     0.01     0.16 1.00     1899     1555
-# NoB                   1.54      0.02     1.50     1.57 1.00      730     1092
+################### Plotting it all together
 
-
-ModelofModelPlot <- mcmc_plot(EffectsModel, type = "areas", prob = 0.95, variable = "^b_", regex = TRUE)+
-  geom_vline(xintercept = 0, linetype = "longdash", color = "gray")+
-  xlab("Posterior estimates")+
-  theme_minimal()+
-  theme(text = element_text(size = 15, family = "sans"))+
-  scale_y_discrete(labels = c("Intercept", "Query Structure", "Sequence Structure", "Sequence Length"))
-ModelofModelPlot
-
-ModelOutputPlot <- (plotNoB + ModelofModelPlot + plotrtTrials)/(plotFinalThresholds + plotFinalConnections + ModelvsDataPlot) +
+ModelOutputPlot <- (plotNoB  + plotrtTrials)/(plotFinalThresholds + plotFinalConnections + ModelvsDataPlot) +
   plot_annotation(tag_levels = "A")+ 
   plot_layout(guides = 'collect')
 ModelOutputPlot
